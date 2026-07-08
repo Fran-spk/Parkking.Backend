@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Parkking.Repositories</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parkking.Infrastructure\Parkking.Infrastructure.csproj" />
+    <ProjectReference Include="..\Parkking.Models\Parkking.Models.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Parkking.Services</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mapster" Version="10.0.7" />
+    <PackageReference Include="Selenium.WebDriver" Version="4.44.0" />
+    <PackageReference Include="Volo.Abp.Core" Version="10.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Parkking.DTOs\Parkking.DTOs.csproj" />
+    <ProjectReference Include="..\Parkking.Infrastructure\Parkking.Infrastructure.csproj" />
+    <ProjectReference Include="..\Parkking.Models\Parkking.Models.csproj" />
+    <ProjectReference Include="..\Parkking.Repositories\Parkking.Repositories.csproj" />
+  </ItemGroup>
+
+</Project>
