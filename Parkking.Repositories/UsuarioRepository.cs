@@ -13,9 +13,9 @@ public class UsuarioRepository
 
     public Usuario? GetByLogin(string login) =>
         _context.Usuarios
-            .FirstOrDefault(u => u.USU_USUARIO == login || u.USU_MAIL == login);
+            .FirstOrDefault(u => u.UsuarioName == login || u.Mail == login);
 
-    public List<Estacionamiento> GetEstacionamientosUsuario(int usuarioId) =>
+    public List<DatosEstacionamiento> GetEstacionamientosUsuario(int usuarioId) =>
         _context.UsuarioEstacionamientos
             .Include(x => x.Estacionamiento)
             .Where(x => x.USU_ID == usuarioId && x.Activo)
@@ -24,5 +24,24 @@ public class UsuarioRepository
 
     public bool TieneAccesoEstacionamiento(int usuarioId, int estacionamientoId) =>
         _context.UsuarioEstacionamientos.Any(x =>
-            x.USU_ID == usuarioId && x.ESTACIONAMIENTO_ID == estacionamientoId && x.Activo);
+            x.USU_ID == usuarioId &&
+            x.ESTACIONAMIENTO_ID == estacionamientoId &&
+            x.Activo);
+
+    public Usuario? GetByMail(string mail) =>
+        _context.Usuarios
+            .FirstOrDefault(u => u.Mail == mail);
+
+    public Usuario? GetById(int usuarioId) {
+        var usu = _context.Usuarios
+       .FirstOrDefault(u => u.USU_ID == usuarioId);
+        return usu;
+    }
+ 
+      
+
+    public void SaveChanges(Usuario usuario)
+    {
+        _context.SaveChanges();
+    }
 }

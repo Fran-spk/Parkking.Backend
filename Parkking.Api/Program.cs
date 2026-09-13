@@ -23,31 +23,38 @@ builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<PasswordHasher>();
 
 builder.Services.AddScoped<ClienteRepository>();
-builder.Services.AddScoped<AbonoCocheraRepository>();
+builder.Services.AddScoped<AbonoRepository>();
 builder.Services.AddScoped<CocheraRepository>();
 builder.Services.AddScoped<CajaMensualRepository>();
 builder.Services.AddScoped<PagoRepository>();
+builder.Services.AddScoped<ReciboRepository>();
 builder.Services.AddScoped<CategoriaRepository>();
 builder.Services.AddScoped<TarifaMensualRepository>();
 builder.Services.AddScoped<TipoVehiculoRepository>();
+builder.Services.AddScoped<MetodoDePagoRepository>();
 builder.Services.AddScoped<GrupoRepository>();
 builder.Services.AddScoped<UsuarioRepository>();
 builder.Services.AddScoped<DashboardRepository>();
 builder.Services.AddScoped<EstacionamientoRepository>();
 builder.Services.AddScoped<EstacionamientoService>();
 
-builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UsuarioService>();
+builder.Services.AddScoped<SesionService>();
 builder.Services.AddScoped<ClienteService>();
-builder.Services.AddScoped<AbonoCocheraService>();
+builder.Services.AddScoped<AbonoService>();
+builder.Services.AddScoped<AbonoPrecioService>();
 builder.Services.AddScoped<CocheraService>();
 builder.Services.AddScoped<CajaMensualService>();
 builder.Services.AddScoped<MovimientoService>();
 builder.Services.AddScoped<PagoService>();
+builder.Services.AddScoped<ReciboService>();
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<TarifaMensualService>();
 builder.Services.AddScoped<TipoVehiculoService>();
+builder.Services.AddScoped<MetodoDePagoService>();
 builder.Services.AddScoped<GrupoService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ReportesService>();
 
 builder.Services.AddDbContext<EstacionamientoContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

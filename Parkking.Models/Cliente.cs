@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Parkking.Models
@@ -11,7 +11,7 @@ namespace Parkking.Models
         [Required]
         [ForeignKey("Estacionamiento")]
         public int EstacionamientoId { get; set; }
-        public Estacionamiento Estacionamiento { get; set; }
+        public DatosEstacionamiento Estacionamiento { get; set; }
         [Required]
         [MaxLength(100)]
         public string Nombre { get; set; }
@@ -27,8 +27,8 @@ namespace Parkking.Models
 
         public bool Activo { get; set; } = true;
 
-        public ICollection<AbonoCochera> Abonos { get; set; }
-            = new List<AbonoCochera>();
+        public ICollection<Abono> Abonos { get; set; } = new List<Abono>();
+        public ICollection<Vehiculo> Vehiculos { get; set; } = new List<Vehiculo>();
     }
 
 }

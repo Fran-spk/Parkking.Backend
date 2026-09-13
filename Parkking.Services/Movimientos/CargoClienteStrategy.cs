@@ -22,7 +22,7 @@ public class CargoClienteStrategy : IMovimientoStrategy
                 "El monto debe ser mayor a cero."
             );
 
-        if (_req.AbonoCocheraId == null)
+        if (_req.AbonoId == null)
             throw new ValidationException(
                 "El cargo debe estar asociado a un abono."
             );
@@ -36,6 +36,6 @@ public class CargoClienteStrategy : IMovimientoStrategy
         Descripcion = $"Cargo a {_req.ClienteNombre} - {_req.Descripcion}",
         Monto = _req.Monto,
         FechaHora = DateTime.UtcNow,
-        AbonoCocheraId = _req.AbonoCocheraId
+        AbonoId = _req.AbonoId
     };
 }

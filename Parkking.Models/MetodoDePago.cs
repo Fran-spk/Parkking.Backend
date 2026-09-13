@@ -1,44 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace Parkking.Models
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Parkking.Models;
+
+public class MetodoDePago : IMultiTenant
 {
-    public class MetodoDePago: IMultiTenant
-    {
+    [Key]
+    public int MetodoDePagoId { get; set; }
 
-        private int metododepagoId;
-        private string nombreMetodo;
-        private bool estado;
+    [Required]
+    [ForeignKey(nameof(Estacionamiento))]
+    public int EstacionamientoId { get; set; }
+    public DatosEstacionamiento Estacionamiento { get; set; } = null!;
 
-        [Required]
-        [ForeignKey("Estacionamiento")]
-        public int EstacionamientoId { get; set; }
-        public Estacionamiento Estacionamiento { get; set; }
-        public int MetodoDePagoId
-        {
-            get { return metododepagoId; }
-            set { metododepagoId = value; }
-        }
+    [Required]
+    [MaxLength(100)]
+    public string Nombre { get; set; } = string.Empty;
 
-        public string NombreMetodo
-        {
-            get { return nombreMetodo; }
-            set { nombreMetodo = value; }
-        }
+    public bool Activo { get; set; } = true;
 
-        public bool Estado
-        {
-            get { return estado; }
-            set { estado = value; }
-        }
-
-        public override string ToString()
-        {
-            return NombreMetodo.ToString();
-        }
-    }
+    public override string ToString() => Nombre;
 }

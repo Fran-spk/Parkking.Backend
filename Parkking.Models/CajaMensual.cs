@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Parkking.Models.Enums;
 
@@ -11,7 +11,7 @@ namespace Parkking.Models
 
         [ForeignKey("Estacionamiento")]
         public int EstacionamientoId { get; set; }
-        public Estacionamiento Estacionamiento { get; set; }
+        public DatosEstacionamiento Estacionamiento { get; set; }
 
         [Required]
         public DateOnly Mes { get; set; }
@@ -25,7 +25,7 @@ namespace Parkking.Models
         public decimal TotalGastos { get; private set; }
         public decimal Saldo { get; private set; }
 
-        // Método de negocio dentro de la entidad
+        // M�todo de negocio dentro de la entidad
         public void RegistrarImpactoFinanciero(TipoMovimiento tipo, decimal monto)
         {
             if (tipo == TipoMovimiento.Ingreso)

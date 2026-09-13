@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Parkking.Models.Seguridad;
@@ -24,7 +24,7 @@ public class UsuarioEstacionamiento
     [ForeignKey(nameof(Estacionamiento))]
     public int ESTACIONAMIENTO_ID { get; set; }
 
-    public virtual Estacionamiento Estacionamiento { get; set; }
+    public virtual DatosEstacionamiento Estacionamiento { get; set; }
 
     public DateTime FechaAlta { get; set; }
 

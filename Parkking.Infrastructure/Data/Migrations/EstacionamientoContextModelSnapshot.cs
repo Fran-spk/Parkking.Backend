@@ -42,12 +42,15 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccionesACC_ID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Usuario_EstacionamientoUsuarioEstacionamientoId")
+                    b.Property<int>("Usuario_EstacionamientoUSU_ID")
                         .HasColumnType("integer");
 
-                    b.HasKey("AccionesACC_ID", "Usuario_EstacionamientoUsuarioEstacionamientoId");
+                    b.Property<int>("Usuario_EstacionamientoESTACIONAMIENTO_ID")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("Usuario_EstacionamientoUsuarioEstacionamientoId");
+                    b.HasKey("AccionesACC_ID", "Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID");
+
+                    b.HasIndex("Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID");
 
                     b.ToTable("AccionUsuarioEstacionamiento");
                 });
@@ -72,23 +75,26 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<int>("GruposGRU_ID")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Usuario_EstacionamientoUsuarioEstacionamientoId")
+                    b.Property<int>("Usuario_EstacionamientoUSU_ID")
                         .HasColumnType("integer");
 
-                    b.HasKey("GruposGRU_ID", "Usuario_EstacionamientoUsuarioEstacionamientoId");
+                    b.Property<int>("Usuario_EstacionamientoESTACIONAMIENTO_ID")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("Usuario_EstacionamientoUsuarioEstacionamientoId");
+                    b.HasKey("GruposGRU_ID", "Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID");
+
+                    b.HasIndex("Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID");
 
                     b.ToTable("GrupoUsuarioEstacionamiento");
                 });
 
-            modelBuilder.Entity("Parkking.Models.AbonoCochera", b =>
+            modelBuilder.Entity("Parkking.Models.Abono", b =>
                 {
-                    b.Property<int>("AbonoCocheraId")
+                    b.Property<int>("AbonoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AbonoCocheraId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AbonoId"));
 
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
@@ -100,9 +106,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("CocheraId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("EstacionamientoId")
                         .HasColumnType("integer");
 
@@ -112,29 +115,84 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("FechaInicioCobro")
                         .HasColumnType("date");
 
-                    b.Property<string>("ModeloVehiculo")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Patente")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                    b.Property<int>("PeriodicidadCobro")
+                        .HasColumnType("integer");
 
                     b.Property<decimal?>("PrecioAcordado")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("TipoVehiculoId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("AbonoCocheraId");
+                    b.HasKey("AbonoId");
 
                     b.HasIndex("ClienteId");
 
+                    b.HasIndex("EstacionamientoId");
+
+                    b.ToTable("Abonos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.AbonoPlaza", b =>
+                {
+                    b.Property<int>("AbonoPlazaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AbonoPlazaId"));
+
+                    b.Property<int>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("CocheraId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AbonoPlazaId");
+
                     b.HasIndex("CocheraId");
 
-                    b.HasIndex("TipoVehiculoId");
+                    b.HasIndex("AbonoId", "CocheraId")
+                        .IsUnique();
 
-                    b.ToTable("AbonoCocheras");
+                    b.ToTable("AbonoPlazas", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.AbonoVehiculo", b =>
+                {
+                    b.Property<int>("AbonoVehiculoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AbonoVehiculoId"));
+
+                    b.Property<int>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("AbonoPlazaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Modalidad")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VehiculoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AbonoVehiculoId");
+
+                    b.HasIndex("AbonoId");
+
+                    b.HasIndex("AbonoPlazaId");
+
+                    b.HasIndex("VehiculoId")
+                        .IsUnique();
+
+                    b.ToTable("AbonoVehiculos", (string)null);
                 });
 
             modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
@@ -270,13 +328,50 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.ToTable("Cocheras");
                 });
 
-            modelBuilder.Entity("Parkking.Models.Estacionamiento", b =>
+            modelBuilder.Entity("Parkking.Models.Cuota", b =>
+                {
+                    b.Property<int>("CuotaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CuotaId"));
+
+                    b.Property<int>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("PeriodoFin")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PeriodoInicio")
+                        .HasColumnType("date");
+
+                    b.HasKey("CuotaId");
+
+                    b.HasIndex("AbonoId", "PeriodoInicio")
+                        .IsUnique();
+
+                    b.ToTable("Cuotas", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.DatosEstacionamiento", b =>
                 {
                     b.Property<int>("EstacionamientoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EstacionamientoId"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("AplicaRecargo")
                         .HasColumnType("boolean");
@@ -291,6 +386,9 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("ImprimirReciboAlCobrar")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("text");
@@ -300,7 +398,135 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.HasKey("EstacionamientoId");
 
-                    b.ToTable("Estacionamientos");
+                    b.ToTable("Estacionamientos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.DetalleCuota", b =>
+                {
+                    b.Property<int>("DetalleCuotaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetalleCuotaId"));
+
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("CategoriaNombre")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int?>("CocheraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CocheraNumero")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreadoEn")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CuotaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Patente")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("TarifaMensualId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TipoVehiculoNombre")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int?>("VehiculoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DetalleCuotaId");
+
+                    b.HasIndex("CocheraId");
+
+                    b.HasIndex("CuotaId");
+
+                    b.HasIndex("EstacionamientoId");
+
+                    b.HasIndex("TarifaMensualId");
+
+                    b.HasIndex("VehiculoId");
+
+                    b.ToTable("DetallesCuota", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.DetallePago", b =>
+                {
+                    b.Property<int>("DetallePagoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DetallePagoId"));
+
+                    b.Property<int>("CuotaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PagoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DetallePagoId");
+
+                    b.HasIndex("CuotaId");
+
+                    b.HasIndex("PagoId");
+
+                    b.ToTable("DetallesPago", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.MetodoDePago", b =>
+                {
+                    b.Property<int>("MetodoDePagoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MetodoDePagoId"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("MetodoDePagoId");
+
+                    b.HasIndex("EstacionamientoId", "Nombre");
+
+                    b.ToTable("MetodosDePago", (string)null);
                 });
 
             modelBuilder.Entity("Parkking.Models.MovimientoCaja", b =>
@@ -311,7 +537,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MovimientoCajaId"));
 
-                    b.Property<int?>("AbonoCocheraId")
+                    b.Property<int?>("AbonoId")
                         .HasColumnType("integer");
 
                     b.Property<int>("CajaMensualId")
@@ -331,7 +557,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Monto")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("PagoMensualId")
+                    b.Property<int?>("PagoId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Responsable")
@@ -351,46 +577,45 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("UsuarioId")
-                        .HasMaxLength(100)
                         .HasColumnType("integer");
 
                     b.HasKey("MovimientoCajaId");
 
-                    b.HasIndex("AbonoCocheraId");
+                    b.HasIndex("AbonoId");
 
                     b.HasIndex("CajaMensualId");
 
-                    b.HasIndex("PagoMensualId");
+                    b.HasIndex("PagoId");
 
                     b.HasIndex("UsuarioId");
 
                     b.ToTable("MovimientosCaja");
                 });
 
-            modelBuilder.Entity("Parkking.Models.PagoMensual", b =>
+            modelBuilder.Entity("Parkking.Models.Pago", b =>
                 {
-                    b.Property<int>("PagoMensualId")
+                    b.Property<int>("PagoId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PagoMensualId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PagoId"));
 
-                    b.Property<int>("AbonoCocheraId")
+                    b.Property<int>("AbonoId")
                         .HasColumnType("integer");
 
                     b.Property<int>("EstacionamientoId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("FechaHoraCarga")
+                    b.Property<DateTime>("FechaHora")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("MercadoPagoId")
                         .HasColumnType("text");
 
-                    b.Property<DateOnly>("Mes")
-                        .HasColumnType("date");
+                    b.Property<int?>("MetodoDePagoId")
+                        .HasColumnType("integer");
 
-                    b.Property<decimal>("Monto")
+                    b.Property<decimal>("MontoTotal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Observacion")
@@ -400,11 +625,89 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<decimal?>("Recargo")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("PagoMensualId");
+                    b.HasKey("PagoId");
 
-                    b.HasIndex("AbonoCocheraId");
+                    b.HasIndex("AbonoId");
 
-                    b.ToTable("PagosMensuales");
+                    b.HasIndex("MetodoDePagoId");
+
+                    b.ToTable("Pagos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Recibo", b =>
+                {
+                    b.Property<int>("ReciboId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReciboId"));
+
+                    b.Property<int>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Anulado")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ClienteNombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Cobrador")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CocherasLabel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaEmision")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("MetodoPagoLabel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("MotivoAnulacion")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Numero")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("PagoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PatentesLabel")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PeriodosLabel")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Recargo")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("ReciboId");
+
+                    b.HasIndex("PagoId")
+                        .IsUnique();
+
+                    b.HasIndex("EstacionamientoId", "Numero")
+                        .IsUnique();
+
+                    b.ToTable("Recibos", (string)null);
                 });
 
             modelBuilder.Entity("Parkking.Models.Seguridad.Accion", b =>
@@ -477,20 +780,30 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("USU_ID"));
 
-                    b.Property<int?>("Estado_Usuario")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("USU_CLAVE")
+                    b.Property<string>("Clave")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("USU_MAIL")
+                    b.Property<int?>("Estado_Usuario")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Mail")
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
-                    b.Property<string>("USU_USUARIO")
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Telefono")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("UsuarioName")
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
@@ -516,6 +829,9 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("FechaHoraActualizacion")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("PeriodicidadCobro")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
@@ -561,31 +877,66 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Parkking.Models.UsuarioEstacionamiento", b =>
                 {
-                    b.Property<int>("UsuarioEstacionamientoId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("USU_ID")
                         .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UsuarioEstacionamientoId"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("boolean");
 
                     b.Property<int>("ESTACIONAMIENTO_ID")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("FechaAlta")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int>("USU_ID")
+                    b.Property<int>("UsuarioEstacionamientoId")
                         .HasColumnType("integer");
 
-                    b.HasKey("UsuarioEstacionamientoId");
+                    b.HasKey("USU_ID", "ESTACIONAMIENTO_ID");
 
                     b.HasIndex("ESTACIONAMIENTO_ID");
 
-                    b.HasIndex("USU_ID");
-
                     b.ToTable("UsuarioEstacionamientos");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Vehiculo", b =>
+                {
+                    b.Property<int>("VehiculoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VehiculoId"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ModeloVehiculo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Patente")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("TipoVehiculoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VehiculoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("EstacionamientoId");
+
+                    b.HasIndex("TipoVehiculoId");
+
+                    b.ToTable("Vehiculos", (string)null);
                 });
 
             modelBuilder.Entity("AccionGrupo", b =>
@@ -613,7 +964,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Parkking.Models.UsuarioEstacionamiento", null)
                         .WithMany()
-                        .HasForeignKey("Usuario_EstacionamientoUsuarioEstacionamientoId")
+                        .HasForeignKey("Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -643,12 +994,12 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Parkking.Models.UsuarioEstacionamiento", null)
                         .WithMany()
-                        .HasForeignKey("Usuario_EstacionamientoUsuarioEstacionamientoId")
+                        .HasForeignKey("Usuario_EstacionamientoUSU_ID", "Usuario_EstacionamientoESTACIONAMIENTO_ID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Parkking.Models.AbonoCochera", b =>
+            modelBuilder.Entity("Parkking.Models.Abono", b =>
                 {
                     b.HasOne("Parkking.Models.Cliente", "Cliente")
                         .WithMany("Abonos")
@@ -656,28 +1007,65 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Parkking.Models.Cochera", "Cochera")
-                        .WithMany("Abonos")
-                        .HasForeignKey("CocheraId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Parkking.Models.TipoVehiculo", "TipoVehiculo")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
-                        .HasForeignKey("TipoVehiculoId")
+                        .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cliente");
 
-                    b.Navigation("Cochera");
+                    b.Navigation("Estacionamiento");
+                });
 
-                    b.Navigation("TipoVehiculo");
+            modelBuilder.Entity("Parkking.Models.AbonoPlaza", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany("Plazas")
+                        .HasForeignKey("AbonoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Cochera", "Cochera")
+                        .WithMany("Plazas")
+                        .HasForeignKey("CocheraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Abono");
+
+                    b.Navigation("Cochera");
+                });
+
+            modelBuilder.Entity("Parkking.Models.AbonoVehiculo", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany("AbonoVehiculos")
+                        .HasForeignKey("AbonoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.AbonoPlaza", "AbonoPlaza")
+                        .WithMany("VehiculosFijos")
+                        .HasForeignKey("AbonoPlazaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Vehiculo", "Vehiculo")
+                        .WithOne("AbonoVehiculo")
+                        .HasForeignKey("Parkking.Models.AbonoVehiculo", "VehiculoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Abono");
+
+                    b.Navigation("AbonoPlaza");
+
+                    b.Navigation("Vehiculo");
                 });
 
             modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
                 {
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -688,7 +1076,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Parkking.Models.CategoriaCochera", b =>
                 {
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -699,7 +1087,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Parkking.Models.Cliente", b =>
                 {
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -719,11 +1107,92 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("CategoriaCochera");
                 });
 
+            modelBuilder.Entity("Parkking.Models.Cuota", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany("Cuotas")
+                        .HasForeignKey("AbonoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Abono");
+                });
+
+            modelBuilder.Entity("Parkking.Models.DetalleCuota", b =>
+                {
+                    b.HasOne("Parkking.Models.Cochera", "Cochera")
+                        .WithMany()
+                        .HasForeignKey("CocheraId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Cuota", "Cuota")
+                        .WithMany("Detalles")
+                        .HasForeignKey("CuotaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
+                        .WithMany()
+                        .HasForeignKey("EstacionamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.TarifaMensual", "Tarifa")
+                        .WithMany()
+                        .HasForeignKey("TarifaMensualId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Cochera");
+
+                    b.Navigation("Cuota");
+
+                    b.Navigation("Estacionamiento");
+
+                    b.Navigation("Tarifa");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("Parkking.Models.DetallePago", b =>
+                {
+                    b.HasOne("Parkking.Models.Cuota", "Cuota")
+                        .WithMany("DetallesPago")
+                        .HasForeignKey("CuotaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Pago", "Pago")
+                        .WithMany("Detalles")
+                        .HasForeignKey("PagoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cuota");
+
+                    b.Navigation("Pago");
+                });
+
+            modelBuilder.Entity("Parkking.Models.MetodoDePago", b =>
+                {
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
+                        .WithMany()
+                        .HasForeignKey("EstacionamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Estacionamiento");
+                });
+
             modelBuilder.Entity("Parkking.Models.MovimientoCaja", b =>
                 {
-                    b.HasOne("Parkking.Models.AbonoCochera", "Abono")
+                    b.HasOne("Parkking.Models.Abono", "Abono")
                         .WithMany()
-                        .HasForeignKey("AbonoCocheraId");
+                        .HasForeignKey("AbonoId");
 
                     b.HasOne("Parkking.Models.CajaMensual", "CajaMensual")
                         .WithMany("Movimientos")
@@ -731,9 +1200,9 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Parkking.Models.PagoMensual", "PagoMensual")
+                    b.HasOne("Parkking.Models.Pago", "Pago")
                         .WithMany("Movimientos")
-                        .HasForeignKey("PagoMensualId");
+                        .HasForeignKey("PagoId");
 
                     b.HasOne("Parkking.Models.Seguridad.Usuario", "Usuario")
                         .WithMany()
@@ -745,20 +1214,38 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.Navigation("CajaMensual");
 
-                    b.Navigation("PagoMensual");
+                    b.Navigation("Pago");
 
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Parkking.Models.PagoMensual", b =>
+            modelBuilder.Entity("Parkking.Models.Pago", b =>
                 {
-                    b.HasOne("Parkking.Models.AbonoCochera", "AbonoCochera")
-                        .WithMany("PagosMensuales")
-                        .HasForeignKey("AbonoCocheraId")
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany("Pagos")
+                        .HasForeignKey("AbonoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AbonoCochera");
+                    b.HasOne("Parkking.Models.MetodoDePago", "MetodoDePago")
+                        .WithMany()
+                        .HasForeignKey("MetodoDePagoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Abono");
+
+                    b.Navigation("MetodoDePago");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Recibo", b =>
+                {
+                    b.HasOne("Parkking.Models.Pago", "Pago")
+                        .WithOne("Recibo")
+                        .HasForeignKey("Parkking.Models.Recibo", "PagoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pago");
                 });
 
             modelBuilder.Entity("Parkking.Models.TarifaMensual", b =>
@@ -769,7 +1256,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -790,7 +1277,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Parkking.Models.TipoVehiculo", b =>
                 {
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("EstacionamientoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -801,7 +1288,7 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Parkking.Models.UsuarioEstacionamiento", b =>
                 {
-                    b.HasOne("Parkking.Models.Estacionamiento", "Estacionamiento")
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
                         .WithMany()
                         .HasForeignKey("ESTACIONAMIENTO_ID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -818,9 +1305,47 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Parkking.Models.AbonoCochera", b =>
+            modelBuilder.Entity("Parkking.Models.Vehiculo", b =>
                 {
-                    b.Navigation("PagosMensuales");
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany("Vehiculos")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
+                        .WithMany()
+                        .HasForeignKey("EstacionamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.TipoVehiculo", "TipoVehiculo")
+                        .WithMany()
+                        .HasForeignKey("TipoVehiculoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Estacionamiento");
+
+                    b.Navigation("TipoVehiculo");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Abono", b =>
+                {
+                    b.Navigation("AbonoVehiculos");
+
+                    b.Navigation("Cuotas");
+
+                    b.Navigation("Pagos");
+
+                    b.Navigation("Plazas");
+                });
+
+            modelBuilder.Entity("Parkking.Models.AbonoPlaza", b =>
+                {
+                    b.Navigation("VehiculosFijos");
                 });
 
             modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
@@ -831,21 +1356,39 @@ namespace Parkking.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Parkking.Models.Cliente", b =>
                 {
                     b.Navigation("Abonos");
+
+                    b.Navigation("Vehiculos");
                 });
 
             modelBuilder.Entity("Parkking.Models.Cochera", b =>
                 {
-                    b.Navigation("Abonos");
+                    b.Navigation("Plazas");
                 });
 
-            modelBuilder.Entity("Parkking.Models.PagoMensual", b =>
+            modelBuilder.Entity("Parkking.Models.Cuota", b =>
                 {
+                    b.Navigation("Detalles");
+
+                    b.Navigation("DetallesPago");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Pago", b =>
+                {
+                    b.Navigation("Detalles");
+
                     b.Navigation("Movimientos");
+
+                    b.Navigation("Recibo");
                 });
 
             modelBuilder.Entity("Parkking.Models.Seguridad.Usuario", b =>
                 {
                     b.Navigation("Usuario_Estacionamiento");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Vehiculo", b =>
+                {
+                    b.Navigation("AbonoVehiculo");
                 });
 #pragma warning restore 612, 618
         }

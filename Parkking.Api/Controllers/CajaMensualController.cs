@@ -29,7 +29,7 @@ public class CajaMensualController : ControllerBase
             return Ok(
                 _service
                     .GetMovimientosByAbono(abonoCocheraId)
-                    .Adapt<IEnumerable<MovimientoCajaDto>>()
+                    .Adapt<IEnumerable<MovimientoAbono>>()
             );
         }
         catch (Exception ex)

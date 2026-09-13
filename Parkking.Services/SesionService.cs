@@ -1,4 +1,5 @@
 using Parkking.DTOs.Auth;
+using Parkking.DTOs.Usuario;
 using Parkking.Infrastructure.Authentication;
 using Parkking.Infrastructure.Security;
 using Parkking.Models.Enums;
@@ -7,13 +8,13 @@ using Parkking.Repositories;
 
 namespace Parkking.Services;
 
-public class AuthService
+public class SesionService
 {
     private readonly UsuarioRepository _repository;
     private readonly PasswordHasher _passwordHasher;
     private readonly JwtService _jwtService;
 
-    public AuthService(UsuarioRepository repository, PasswordHasher passwordHasher, JwtService jwtService)
+    public SesionService(UsuarioRepository repository, PasswordHasher passwordHasher, JwtService jwtService)
     {
         _repository = repository;
         _passwordHasher = passwordHasher;
@@ -26,7 +27,7 @@ public class AuthService
         if (usuario == null)
             throw new UnauthorizedAccessException("Usuario o contraseña incorrectos");
 
-        if (!_passwordHasher.VerificarClave(request.Password, usuario.USU_CLAVE))
+        if (!_passwordHasher.VerificarClave(request.Password, usuario.Clave))
             throw new UnauthorizedAccessException("Usuario o contraseña incorrectos");
 
         if (usuario.Estado_Usuario == EstadoUsuario.Deshabilitado)
@@ -34,6 +35,7 @@ public class AuthService
 
         return (usuario, _jwtService.GenerarToken(usuario));
     }
+
 
     public List<EstacionamientoUsuarioDto> GetEstacionamientos(int usuarioId) =>
         _repository.GetEstacionamientosUsuario(usuarioId)

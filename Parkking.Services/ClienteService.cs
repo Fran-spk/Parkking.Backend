@@ -26,6 +26,29 @@ public class ClienteService
         return cliente;
     }
 
+    public List<VehiculoDto> GetVehiculos(int clienteId, bool soloDisponibles = false)
+    {
+        var cliente = _repository.GetById(clienteId) ?? throw new Exception("Cliente no encontrado");
+        return _repository.GetVehiculosByCliente(cliente.ClienteId)
+            .Select(v =>
+            {
+                var asignado = v.AbonoVehiculo != null && v.AbonoVehiculo.Abono != null && v.AbonoVehiculo.Abono.Activo;
+                return new VehiculoDto
+                {
+                    VehiculoId = v.VehiculoId,
+                    ClienteId = v.ClienteId,
+                    Patente = v.Patente,
+                    ModeloVehiculo = v.ModeloVehiculo,
+                    TipoVehiculoId = v.TipoVehiculoId,
+                    TipoVehiculoNombre = v.TipoVehiculo?.Nombre,
+                    Activo = v.Activo,
+                    AsignadoAAbonoActivo = asignado,
+                };
+            })
+            .Where(v => !soloDisponibles || !v.AsignadoAAbonoActivo)
+            .ToList();
+    }
+
     public Cliente Create(ClienteRequest request)
     {
         var cliente = new Cliente

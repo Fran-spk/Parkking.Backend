@@ -12,21 +12,18 @@ public class EstacionamientoRepository
         _context = context;
     }
 
-    public Estacionamiento? GetById(int id)
-    {
-        return _context.Estacionamientos
-            .FirstOrDefault(e => e.EstacionamientoId == id);
-    }
+    public DatosEstacionamiento? GetById(int id) =>
+        _context.Estacionamientos.FirstOrDefault(e => e.EstacionamientoId == id);
 
-    public void Add(Estacionamiento estacionamiento)
+    public void Add(DatosEstacionamiento datos)
     {
-        _context.Estacionamientos.Add(estacionamiento);
+        _context.Estacionamientos.Add(datos);
         _context.SaveChanges();
     }
 
-    public void Update(Estacionamiento estacionamiento)
+    public void Update(DatosEstacionamiento datos)
     {
-        _context.Estacionamientos.Update(estacionamiento);
+        _context.Estacionamientos.Update(datos);
         _context.SaveChanges();
     }
 }

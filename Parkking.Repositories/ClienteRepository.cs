@@ -21,17 +21,25 @@ public class ClienteRepository
     public Cliente? GetByIdWithAbonos(int id)
     {
         return _context.Clientes
-            .Include(c => c.Abonos.Where(a => a.Activo)).ThenInclude(a => a.Cochera)
-            .Include(c => c.Abonos.Where(a => a.Activo)).ThenInclude(a => a.TipoVehiculo)
+            .Include(c => c.Abonos.Where(a => a.Activo)).ThenInclude(a => a.Plazas).ThenInclude(p => p.Cochera)
+            .Include(c => c.Abonos.Where(a => a.Activo)).ThenInclude(a => a.AbonoVehiculos).ThenInclude(av => av.Vehiculo).ThenInclude(v => v.TipoVehiculo)
             .FirstOrDefault(c => c.ClienteId == id);
     }
 
     public Cliente? GetById(int id) => _context.Clientes.FirstOrDefault(c => c.ClienteId == id);
 
+    public List<Vehiculo> GetVehiculosByCliente(int clienteId) =>
+        _context.Vehiculos
+            .Include(v => v.TipoVehiculo)
+            .Include(v => v.AbonoVehiculo).ThenInclude(av => av!.Abono)
+            .Where(v => v.ClienteId == clienteId && v.Activo)
+            .OrderBy(v => v.Patente)
+            .ToList();
+
     public void Add(Cliente cliente) => _context.Clientes.Add(cliente);
 
     public bool TieneAbonosActivos(int clienteId) =>
-        _context.AbonoCocheras.Any(a => a.ClienteId == clienteId && a.Activo);
+        _context.Abonos.Any(a => a.ClienteId == clienteId && a.Activo);
 
     public void SaveChanges() => _context.SaveChanges();
 }

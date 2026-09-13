@@ -18,5 +18,18 @@ public class ClienteDto
     public string? Email { get; set; }
     public string? Observacion { get; set; }
     public bool Activo { get; set; }
-    public List<AbonoCocheraDto>? Abonos { get; set; }
+    public List<AbonoDto>? Abonos { get; set; }
+}
+
+public class VehiculoDto
+{
+    public int VehiculoId { get; set; }
+    public int ClienteId { get; set; }
+    public string Patente { get; set; } = string.Empty;
+    public string? ModeloVehiculo { get; set; }
+    public int TipoVehiculoId { get; set; }
+    public string? TipoVehiculoNombre { get; set; }
+    public bool Activo { get; set; }
+    /// <summary>True si ya está vinculado a un abono activo.</summary>
+    public bool AsignadoAAbonoActivo { get; set; }
 }

@@ -9,5 +9,6 @@ public class RegistrarMovimientoRequest
     public string Descripcion { get; set; } = string.Empty;
     public decimal Monto { get; set; }
     public string? ClienteNombre { get; set; }
-    public int? AbonoCocheraId { get; set; }
+    public int? AbonoId { get; set; }
+    public int? AbonoCocheraId { get => AbonoId; set => AbonoId = value; }
 }

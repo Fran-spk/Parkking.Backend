@@ -1,25 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Parkking.DTOs.Estacionamiento;
 
-namespace Parkking.DTOs.Estacionamiento
+public class DatosEstacionamientoDto
 {
-    public class EstacionamientoDto
-    {
-        public int EstacionamientoId { get; set; }
+    public int EstacionamientoId { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public string Direccion { get; set; } = string.Empty;
+    public int DiaVencimientoAbono { get; set; }
+    public bool AplicaRecargo { get; set; }
+    public decimal PorcentajeRecargo { get; set; }
+    public int? DiasUmbralProporcional { get; set; }
+    public bool Activo { get; set; } = true;
+    public bool ImprimirReciboAlCobrar { get; set; } = true;
+}
 
-        public string Nombre { get; set; }
-
-        public string Direccion { get; set; }
-
-        public int DiaVencimientoAbono { get; set; }
-
-        public bool AplicaRecargo { get; set; }
-
-        public decimal PorcentajeRecargo { get; set; }
-
-        public int? DiasUmbralProporcional { get; set; }
-    }
+/// <summary>Alias de compatibilidad con el front actual.</summary>
+public class EstacionamientoDto : DatosEstacionamientoDto
+{
 }

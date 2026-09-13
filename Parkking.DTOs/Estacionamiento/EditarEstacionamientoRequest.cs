@@ -19,5 +19,7 @@ namespace Parkking.DTOs.Estacionamiento
         public decimal PorcentajeRecargo { get; set; }
 
         public int? DiasUmbralProporcional { get; set; }
+
+        public bool ImprimirReciboAlCobrar { get; set; } = true;
     }
 }

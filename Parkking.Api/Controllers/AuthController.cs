@@ -10,9 +10,9 @@ namespace Parkking.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly SesionService _authService;
 
-    public AuthController(AuthService authService) => _authService = authService;
+    public AuthController(SesionService authService) => _authService = authService;
 
     [HttpPost("login")]
     public ActionResult Login([FromBody] LoginRequest request)
@@ -35,8 +35,8 @@ public class AuthController : ControllerBase
                 usuario = new
                 {
                     id = usuario.USU_ID,
-                    nombre = usuario.USU_USUARIO,
-                    mail = usuario.USU_MAIL
+                    nombre = usuario.UsuarioName,
+                    mail = usuario.Mail
                 }
             });
         }
@@ -63,39 +63,5 @@ public class AuthController : ControllerBase
             nombre = User.FindFirst(ClaimTypes.Name)?.Value,
             email = User.FindFirst(ClaimTypes.Email)?.Value
         });
-    }
-
-    [Authorize]
-    [HttpGet("estacionamientos")]
-    public IActionResult GetEstacionamientos()
-    {
-        var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        return Ok(_authService.GetEstacionamientos(usuarioId));
-    }
-
-    [Authorize]
-    [HttpPost("seleccionar-estacionamiento")]
-    public IActionResult SeleccionarEstacionamiento([FromBody] SeleccionarEstacionamientoRequest request)
-    {
-        var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-        try
-        {
-            _authService.ValidarAccesoEstacionamiento(usuarioId, request.EstacionamientoId);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-
-        Response.Cookies.Append("estacionamiento_activo", request.EstacionamientoId.ToString(), new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddYears(1)
-        });
-
-        return Ok(new { mensaje = "Estacionamiento seleccionado" });
     }
 }

@@ -24,8 +24,16 @@ public class ClienteController : ControllerBase
     [HttpGet("{id}")]
     public ActionResult<ClienteDto> GetById(int id)
     {
-         { return Ok(_service.GetById(id).Adapt<ClienteDto>()); }
-       
+        try { return Ok(_service.GetById(id).Adapt<ClienteDto>()); }
+        catch (Exception ex) { return NotFound(ex.Message); }
+    }
+
+    /// <summary>Vehículos del cliente. soloDisponibles = no asignados a un abono activo.</summary>
+    [HttpGet("{id:int}/vehiculos")]
+    public ActionResult<IEnumerable<VehiculoDto>> GetVehiculos(int id, [FromQuery] bool soloDisponibles = false)
+    {
+        try { return Ok(_service.GetVehiculos(id, soloDisponibles)); }
+        catch (Exception ex) { return BadRequest(ex.Message); }
     }
 
     [HttpPost]

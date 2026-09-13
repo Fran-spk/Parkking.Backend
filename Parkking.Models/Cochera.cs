@@ -13,7 +13,7 @@ public class Cochera : IMultiTenant
     public string? Observacion { get; set; }
     public bool Activo { get; set; } = true;
     public ICollection<TipoVehiculo> VehiculosPermitidos { get; set; } = new List<TipoVehiculo>();
-    public ICollection<AbonoCochera> Abonos { get; set; } = new List<AbonoCochera>();
+    public ICollection<AbonoPlaza> Plazas { get; set; } = new List<AbonoPlaza>();
     public bool MultipleOcupacion { get; set; }
 
     public bool EstaDisponible()
@@ -21,8 +21,8 @@ public class Cochera : IMultiTenant
         if (EstadoCochera != EstadoCochera.Habilitada)
             return false;
 
-        var tieneAbonosActivos = Abonos.Any(a => a.Activo);
-        if (!tieneAbonosActivos)
+        var tienePlazasActivas = Plazas.Any(p => p.Activo && p.Abono.Activo);
+        if (!tienePlazasActivas)
             return true;
 
         return MultipleOcupacion;

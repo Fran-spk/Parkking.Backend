@@ -1,6 +1,7 @@
 using Parkking.DTOs.Tarifas;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
+using Parkking.Models.Enums;
 using Parkking.Repositories;
 
 namespace Parkking.Services;
@@ -18,41 +19,36 @@ public class TarifaMensualService
 
     private int TenantId => _estacionamiento.EstacionamientoId;
 
-    public List<TarifaVigenteDto> GetVigentes()
+    public List<TarifaVigenteDto> GetVigentes(PeriodicidadCobro? periodicidadCobro = null)
     {
-        return _repository.GetAll(TenantId)
-            .GroupBy(t => new { t.TipoVehiculoId, t.CategoriaCocheraId })
+        var todas = _repository.GetAll(TenantId).AsEnumerable();
+        if (periodicidadCobro.HasValue)
+            todas = todas.Where(t => t.PeriodicidadCobro == periodicidadCobro.Value);
+
+        return todas
+            .GroupBy(t => new { t.TipoVehiculoId, t.CategoriaCocheraId, t.PeriodicidadCobro })
             .Select(g =>
             {
                 var t = g.OrderByDescending(x => x.FechaHoraActualizacion).First();
-                return new TarifaVigenteDto
-                {
-                    TarifaMensualId = t.TarifaMensualId,
-                    TipoVehiculoId = t.TipoVehiculoId,
-                    CategoriaCocheraId = t.CategoriaCocheraId,
-                    Precio = t.Precio,
-                    FechaActualizacion = t.FechaHoraActualizacion
-                };
+                return ToVigenteDto(t);
             }).ToList();
     }
 
-    public TarifaVigenteDto GetVigente(int tipoVehiculoId, int categoriaCocheraId)
+    public TarifaVigenteDto GetVigente(int tipoVehiculoId, int categoriaCocheraId, PeriodicidadCobro periodicidadCobro)
     {
-        var tarifa = _repository.GetByCombinacion(tipoVehiculoId, categoriaCocheraId, TenantId).FirstOrDefault();
-        if (tarifa == null) throw new Exception("No hay tarifa vigente para esta combinación");
+        var tarifa = _repository
+            .GetByCombinacion(tipoVehiculoId, categoriaCocheraId, periodicidadCobro, TenantId)
+            .FirstOrDefault()
+            ?? throw new Exception("No hay tarifa vigente para esta combinación de tipo, categoría y periodicidad");
 
-        return new TarifaVigenteDto
-        {
-            TarifaMensualId = tarifa.TarifaMensualId,
-            TipoVehiculoId = tarifa.TipoVehiculoId,
-            CategoriaCocheraId = tarifa.CategoriaCocheraId,
-            Precio = tarifa.Precio,
-            FechaActualizacion = tarifa.FechaHoraActualizacion
-        };
+        return ToVigenteDto(tarifa);
     }
 
-    public List<TarifaHistorialDto> GetHistorial(int tipoVehiculoId, int categoriaCocheraId) =>
-        _repository.GetByCombinacion(tipoVehiculoId, categoriaCocheraId, TenantId)
+    public List<TarifaHistorialDto> GetHistorial(
+        int tipoVehiculoId,
+        int categoriaCocheraId,
+        PeriodicidadCobro periodicidadCobro) =>
+        _repository.GetByCombinacion(tipoVehiculoId, categoriaCocheraId, periodicidadCobro, TenantId)
             .Select(t => new TarifaHistorialDto
             {
                 TarifaMensualId = t.TarifaMensualId,
@@ -64,11 +60,17 @@ public class TarifaMensualService
 
     public TarifaMensual Create(CrearTarifaRequest request)
     {
+        if (!Enum.IsDefined(typeof(PeriodicidadCobro), request.PeriodicidadCobro))
+            throw new Exception("Periodicidad de cobro inválida");
+        if (request.Precio <= 0)
+            throw new Exception("El precio debe ser mayor a cero");
+
         var tarifa = new TarifaMensual
         {
             EstacionamientoId = TenantId,
             TipoVehiculoId = request.TipoVehiculoId,
             CategoriaCocheraId = request.CategoriaCocheraId,
+            PeriodicidadCobro = request.PeriodicidadCobro,
             Precio = request.Precio,
             FechaHoraActualizacion = DateTime.UtcNow
         };
@@ -76,4 +78,14 @@ public class TarifaMensualService
         _repository.SaveChanges();
         return tarifa;
     }
+
+    public static TarifaVigenteDto ToVigenteDto(TarifaMensual t) => new()
+    {
+        TarifaMensualId = t.TarifaMensualId,
+        TipoVehiculoId = t.TipoVehiculoId,
+        CategoriaCocheraId = t.CategoriaCocheraId,
+        PeriodicidadCobro = t.PeriodicidadCobro,
+        Precio = t.Precio,
+        FechaActualizacion = t.FechaHoraActualizacion
+    };
 }

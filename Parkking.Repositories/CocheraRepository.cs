@@ -10,20 +10,23 @@ public class CocheraRepository
 
     public CocheraRepository(EstacionamientoContext context) => _context = context;
 
-    public List<Cochera> GetAllActivas(int estacionamientoId) =>
+    private IQueryable<Cochera> WithIncludes() =>
         _context.Cocheras
-            .Include(c => c.CategoriaCochera).Include(c => c.VehiculosPermitidos).Include(c => c.Abonos)
+            .Include(c => c.CategoriaCochera)
+            .Include(c => c.VehiculosPermitidos)
+            .Include(c => c.Plazas.Where(p => p.Activo)).ThenInclude(p => p.Abono);
+
+    public List<Cochera> GetAllActivas(int estacionamientoId) =>
+        WithIncludes()
             .Where(c => c.EstacionamientoId == estacionamientoId && c.Activo)
             .OrderBy(c => c.Numero).ToList();
 
     public Cochera? GetById(int id, int estacionamientoId) =>
-        _context.Cocheras
-            .Include(c => c.CategoriaCochera).Include(c => c.VehiculosPermitidos).Include(c => c.Abonos)
+        WithIncludes()
             .FirstOrDefault(c => c.CocheraId == id && c.EstacionamientoId == estacionamientoId && c.Activo);
 
     public List<Cochera> GetActivas(int estacionamientoId) =>
-        _context.Cocheras
-            .Include(c => c.CategoriaCochera).Include(c => c.VehiculosPermitidos).Include(c => c.Abonos)
+        WithIncludes()
             .Where(c => c.EstacionamientoId == estacionamientoId && c.Activo).ToList();
 
     public bool ExisteNumero(int estacionamientoId, string numero) =>
@@ -33,11 +36,12 @@ public class CocheraRepository
         _context.TiposVehiculo.Where(v => ids.Contains(v.TipoVehiculoId)).ToList();
 
     public Cochera? GetForUpdate(int id, int estacionamientoId) =>
-        _context.Cocheras.Include(c => c.CategoriaCochera).Include(c => c.Abonos).Include(c => c.VehiculosPermitidos)
+        WithIncludes()
             .FirstOrDefault(c => c.CocheraId == id && c.EstacionamientoId == estacionamientoId && c.Activo);
 
     public Cochera? GetForDeactivate(int id, int estacionamientoId) =>
-        _context.Cocheras.Include(c => c.Abonos)
+        _context.Cocheras
+            .Include(c => c.Plazas.Where(p => p.Activo)).ThenInclude(p => p.Abono)
             .FirstOrDefault(c => c.CocheraId == id && c.EstacionamientoId == estacionamientoId && c.Activo);
 
     public void Add(Cochera cochera) => _context.Cocheras.Add(cochera);

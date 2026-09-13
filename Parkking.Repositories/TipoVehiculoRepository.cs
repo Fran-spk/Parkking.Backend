@@ -28,7 +28,7 @@ public class TipoVehiculoRepository
     }
 
     public bool TieneAbonosActivos(int tipoVehiculoId) =>
-        _context.AbonoCocheras.Any(a => a.TipoVehiculoId == tipoVehiculoId && a.Activo);
+        _context.AbonoVehiculos.Any(av => av.Vehiculo.TipoVehiculoId == tipoVehiculoId && av.Abono.Activo && av.Vehiculo.Activo);
 
     public void Add(TipoVehiculo tipo) => _context.TiposVehiculo.Add(tipo);
     public void SaveChanges() => _context.SaveChanges();

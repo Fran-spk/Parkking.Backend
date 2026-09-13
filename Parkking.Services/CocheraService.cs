@@ -81,7 +81,7 @@ public class CocheraService
     public void Deactivate(int id)
     {
         var cochera = _repository.GetForDeactivate(id, TenantId) ?? throw new Exception("Cochera no encontrada");
-        if (cochera.Abonos.Any(a => a.Activo))
+        if (cochera.Plazas.Any(p => p.Activo && p.Abono.Activo))
             throw new Exception("No se puede desactivar una cochera con abonos activos");
 
         cochera.Activo = false;

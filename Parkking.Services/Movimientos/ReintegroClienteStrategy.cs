@@ -29,6 +29,6 @@ public class ReintegroClienteStrategy : IMovimientoStrategy
         Descripcion = $"Reintegro cliente {_req.ClienteNombre}",
         Monto = _req.Monto,
         FechaHora = DateTime.UtcNow,
-        AbonoCocheraId = _req.AbonoCocheraId
+        AbonoId = _req.AbonoId
     };
 }

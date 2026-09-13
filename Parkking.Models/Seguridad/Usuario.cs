@@ -18,20 +18,25 @@ namespace Parkking.Models.Seguridad
         public int USU_ID { get; set; }
 
         [StringLength(60)]
-        public string USU_USUARIO { get; set; }
+        public string UsuarioName { get; set; }
 
         [StringLength(64)]
-        public string USU_CLAVE { get; set; }
+        public string Clave { get; set; }
 
         [StringLength(60)]
-        public string USU_MAIL { get; set; }
+        public string Mail { get; set; }
 
+        [StringLength(60)]
+        public string Nombre{ get; set; }
+
+        [StringLength(60)]
+        public string Telefono { get; set; }
         public EstadoUsuario? Estado_Usuario { get; set; }
 
-        // Colección hacia la tabla intermedia multi-tenant
+        // Colecciï¿½n hacia la tabla intermedia multi-tenant
         public virtual ICollection<UsuarioEstacionamiento> Usuario_Estacionamiento { get; set; }
 
-        #region Métodos de Conveniencia para Multi-Tenant
+        #region Mï¿½todos de Conveniencia para Multi-Tenant
 
 
         public ReadOnlyCollection<Grupo> GetAllGruposActivos(int estacionamientoId)

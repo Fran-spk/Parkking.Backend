@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
@@ -15,7 +15,7 @@ namespace Parkking.Models
         [Required]
         [ForeignKey("Estacionamiento")]
         public int EstacionamientoId { get; set; }
-        public Estacionamiento Estacionamiento { get; set; }
+        public DatosEstacionamiento Estacionamiento { get; set; }
         public string Nombre { get; set; }
         public bool Activo { get; set; }
 

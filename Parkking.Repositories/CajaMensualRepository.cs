@@ -21,9 +21,9 @@ public class CajaMensualRepository
             .FirstOrDefault(c => c.Mes.Year == year && c.Mes.Month == month && c.EstacionamientoId == estacionamientoId);
     public void AddCaja(CajaMensual caja) => _context.CajasMensuales.Add(caja);
 
-    public List<MovimientoCaja> GetMovimientosByAbono(int abonoCocheraId) =>
+    public List<MovimientoCaja> GetMovimientosByAbono(int abonoId) =>
         _context.MovimientosCaja
-            .Where(m => m.AbonoCocheraId == abonoCocheraId &&
+            .Where(m => m.AbonoId == abonoId &&
                         (m.TipoConcepto == TipoConcepto.CargoCliente || m.TipoConcepto == TipoConcepto.ReintegroCliente))
             .OrderByDescending(m => m.FechaHora).ToList();
 

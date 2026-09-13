@@ -1,25 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel;
-namespace Parkking.Models.Enums
+﻿using System.ComponentModel;
+
+namespace Parkking.Models.Enums;
+
+public enum TipoConcepto
 {
+    [Description("Pago abono")]
+    PagoAbono = 0,
 
-    public enum TipoConcepto
-    {
-        [Description("Pago mensual")]
-        PagoMensual,
+    [Description("Reintegro cliente")]
+    ReintegroCliente = 1,
 
-        [Description("Reintegro cliente")]
-        ReintegroCliente,
+    [Description("Cargo cliente")]
+    CargoCliente = 2,
 
-        [Description("Cargo cliente")]
-        CargoCliente,
-
-        [Description("Gasto cochera")]
-        GastoCochera
-
-    }
+    [Description("Gasto cochera")]
+    GastoCochera = 3
 }
