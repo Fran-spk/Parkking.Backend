@@ -106,6 +106,10 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("EstacionamientoId")
                         .HasColumnType("integer");
 
@@ -116,6 +120,9 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .HasColumnType("date");
 
                     b.Property<int>("PeriodicidadCobro")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PoliticaPrimerPeriodo")
                         .HasColumnType("integer");
 
                     b.Property<decimal?>("PrecioAcordado")
@@ -195,39 +202,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.ToTable("AbonoVehiculos", (string)null);
                 });
 
-            modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
-                {
-                    b.Property<int>("CajaMensualId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CajaMensualId"));
-
-                    b.Property<bool>("Cerrada")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("EstacionamientoId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateOnly>("Mes")
-                        .HasColumnType("date");
-
-                    b.Property<decimal>("Saldo")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("TotalGastos")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("TotalIngresos")
-                        .HasColumnType("numeric");
-
-                    b.HasKey("CajaMensualId");
-
-                    b.HasIndex("EstacionamientoId");
-
-                    b.ToTable("CajasMensuales");
-                });
-
             modelBuilder.Entity("Parkking.Models.CategoriaCochera", b =>
                 {
                     b.Property<int>("CategoriaCocheraId")
@@ -263,6 +237,14 @@ namespace Parkking.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Documento")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Domicilio")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
@@ -309,6 +291,9 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("EstadoCochera")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxOcupacion")
                         .HasColumnType("integer");
 
                     b.Property<bool>("MultipleOcupacion")
@@ -376,18 +361,44 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Property<bool>("AplicaRecargo")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("DiaVencimientoAbono")
+                    b.Property<int>("ContratoPlazoMeses")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("DiasUmbralProporcional")
+                    b.Property<bool>("ContratoSeguroObligatorio")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("DiaVencimientoAbono")
                         .HasColumnType("integer");
 
                     b.Property<string>("Direccion")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("EmailAvisos")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("EnviarReciboPorEmail")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("GenerarContratoAlCrearAbono")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("ImprimirReciboAlCobrar")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("LocadorDocumento")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("LocadorDomicilio")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LocadorNombre")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -503,6 +514,590 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.ToTable("DetallesPago", (string)null);
                 });
 
+            modelBuilder.Entity("Parkking.Models.Documento", b =>
+                {
+                    b.Property<int>("DocumentoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DocumentoId"));
+
+                    b.Property<int?>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaCarga")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateOnly?>("FechaVencimiento")
+                        .HasColumnType("date");
+
+                    b.Property<string>("NombreOriginal")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("RutaRelativa")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("TamanoBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int?>("VehiculoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DocumentoId");
+
+                    b.HasIndex("AbonoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("VehiculoId");
+
+                    b.HasIndex("EstacionamientoId", "Activo", "FechaCarga");
+
+                    b.ToTable("Documentos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AjusteFinanciero", b =>
+                {
+                    b.Property<int>("AjusteFinancieroId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AjusteFinancieroId"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AjusteFinancieroId");
+
+                    b.HasIndex("MovimientoId");
+
+                    b.ToTable("AjustesFinancieros", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AplicacionSaldoAFavor", b =>
+                {
+                    b.Property<int>("AplicacionSaldoAFavorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AplicacionSaldoAFavorId"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AplicacionSaldoAFavorId");
+
+                    b.HasIndex("MovimientoId");
+
+                    b.ToTable("AplicacionesSaldoAFavor", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AuditoriaMovimiento", b =>
+                {
+                    b.Property<int>("AuditoriaMovimientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AuditoriaMovimientoId"));
+
+                    b.Property<string>("Detalle")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AuditoriaMovimientoId");
+
+                    b.HasIndex("MovimientoId");
+
+                    b.ToTable("AuditoriasMovimiento", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Cargo", b =>
+                {
+                    b.Property<int>("CargoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CargoId"));
+
+                    b.Property<int?>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("CargoId");
+
+                    b.HasIndex("AbonoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.ToTable("Cargos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.CuentaCorrienteCliente", b =>
+                {
+                    b.Property<int>("CuentaCorrienteClienteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CuentaCorrienteClienteId"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Saldo")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("CuentaCorrienteClienteId");
+
+                    b.HasIndex("ClienteId")
+                        .IsUnique();
+
+                    b.ToTable("CuentasCorrientesCliente", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.CuentaCorrienteEstacionamiento", b =>
+                {
+                    b.Property<int>("CuentaCorrienteEstacionamientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CuentaCorrienteEstacionamientoId"));
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Saldo")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("CuentaCorrienteEstacionamientoId");
+
+                    b.HasIndex("EstacionamientoId")
+                        .IsUnique();
+
+                    b.ToTable("CuentasCorrientesEstacionamiento", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Gasto", b =>
+                {
+                    b.Property<int>("GastoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GastoId"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("TipoGastoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GastoId");
+
+                    b.HasIndex("MovimientoId");
+
+                    b.HasIndex("TipoGastoId");
+
+                    b.ToTable("Gastos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.GrupoFinanciero", b =>
+                {
+                    b.Property<int>("GrupoFinancieroId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GrupoFinancieroId"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("GrupoFinancieroId");
+
+                    b.HasIndex("EstacionamientoId", "Nombre");
+
+                    b.ToTable("GruposFinancieros", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Movimiento", b =>
+                {
+                    b.Property<int>("MovimientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MovimientoId"));
+
+                    b.Property<int?>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int?>("CuentaCorrienteClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CuentaCorrienteEstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<int?>("PagoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TipoGastoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MovimientoId");
+
+                    b.HasIndex("AbonoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("CuentaCorrienteClienteId");
+
+                    b.HasIndex("CuentaCorrienteEstacionamientoId");
+
+                    b.HasIndex("EstacionamientoId");
+
+                    b.HasIndex("PagoId");
+
+                    b.HasIndex("TipoGastoId");
+
+                    b.ToTable("Movimientos", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.MovimientoGrupoFinanciero", b =>
+                {
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GrupoFinancieroId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MovimientoId", "GrupoFinancieroId");
+
+                    b.HasIndex("GrupoFinancieroId");
+
+                    b.ToTable("MovimientosGrupoFinanciero", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.ReglaAsignacion", b =>
+                {
+                    b.Property<int>("ReglaAsignacionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReglaAsignacionId"));
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Criterio")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GrupoFinancieroId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TipoGastoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ReglaAsignacionId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("GrupoFinancieroId");
+
+                    b.HasIndex("TipoGastoId");
+
+                    b.ToTable("ReglasAsignacion", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Reintegro", b =>
+                {
+                    b.Property<int>("ReintegroId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReintegroId"));
+
+                    b.Property<string>("Beneficiario")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Medio")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("MovimientoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ReintegroId");
+
+                    b.HasIndex("MovimientoId");
+
+                    b.ToTable("Reintegros", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.TipoGasto", b =>
+                {
+                    b.Property<int>("TipoGastoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TipoGastoId"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("TipoGastoId");
+
+                    b.ToTable("TiposGasto", (string)null);
+                });
+
+            modelBuilder.Entity("Parkking.Models.Mensaje", b =>
+                {
+                    b.Property<int>("MensajeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MensajeId"));
+
+                    b.Property<int?>("AbonoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Asunto")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Destinatario")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("EstacionamientoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("ReciboId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Remitente")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("MensajeId");
+
+                    b.HasIndex("ReciboId");
+
+                    b.HasIndex("EstacionamientoId", "Fecha");
+
+                    b.ToTable("Mensajes", (string)null);
+                });
+
             modelBuilder.Entity("Parkking.Models.MetodoDePago", b =>
                 {
                     b.Property<int>("MetodoDePagoId")
@@ -527,69 +1122,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.HasIndex("EstacionamientoId", "Nombre");
 
                     b.ToTable("MetodosDePago", (string)null);
-                });
-
-            modelBuilder.Entity("Parkking.Models.MovimientoCaja", b =>
-                {
-                    b.Property<int>("MovimientoCajaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MovimientoCajaId"));
-
-                    b.Property<int?>("AbonoId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CajaMensualId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<int>("EstacionamientoId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("FechaHora")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("PagoId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Responsable")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<decimal>("SaldoAnterior")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SaldoPosterior")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Tipo")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TipoConcepto")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MovimientoCajaId");
-
-                    b.HasIndex("AbonoId");
-
-                    b.HasIndex("CajaMensualId");
-
-                    b.HasIndex("PagoId");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("MovimientosCaja");
                 });
 
             modelBuilder.Entity("Parkking.Models.Pago", b =>
@@ -1063,17 +1595,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("Vehiculo");
                 });
 
-            modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
-                {
-                    b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
-                        .WithMany()
-                        .HasForeignKey("EstacionamientoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Estacionamiento");
-                });
-
             modelBuilder.Entity("Parkking.Models.CategoriaCochera", b =>
                 {
                     b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
@@ -1177,6 +1698,203 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("Pago");
                 });
 
+            modelBuilder.Entity("Parkking.Models.Documento", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany()
+                        .HasForeignKey("AbonoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Abono");
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AjusteFinanciero", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany()
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Movimiento");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AplicacionSaldoAFavor", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany()
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Movimiento");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.AuditoriaMovimiento", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany("Auditorias")
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Movimiento");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Cargo", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", null)
+                        .WithMany()
+                        .HasForeignKey("AbonoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.CuentaCorrienteCliente", b =>
+                {
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Gasto", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany()
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Finanzas.TipoGasto", "TipoGasto")
+                        .WithMany("Gastos")
+                        .HasForeignKey("TipoGastoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Movimiento");
+
+                    b.Navigation("TipoGasto");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Movimiento", b =>
+                {
+                    b.HasOne("Parkking.Models.Abono", "Abono")
+                        .WithMany()
+                        .HasForeignKey("AbonoId");
+
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId");
+
+                    b.HasOne("Parkking.Models.Finanzas.CuentaCorrienteCliente", "CuentaCorrienteCliente")
+                        .WithMany()
+                        .HasForeignKey("CuentaCorrienteClienteId");
+
+                    b.HasOne("Parkking.Models.Finanzas.CuentaCorrienteEstacionamiento", "CuentaCorrienteEstacionamiento")
+                        .WithMany()
+                        .HasForeignKey("CuentaCorrienteEstacionamientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Pago", "Pago")
+                        .WithMany()
+                        .HasForeignKey("PagoId");
+
+                    b.HasOne("Parkking.Models.Finanzas.TipoGasto", "TipoGasto")
+                        .WithMany()
+                        .HasForeignKey("TipoGastoId");
+
+                    b.Navigation("Abono");
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("CuentaCorrienteCliente");
+
+                    b.Navigation("CuentaCorrienteEstacionamiento");
+
+                    b.Navigation("Pago");
+
+                    b.Navigation("TipoGasto");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.MovimientoGrupoFinanciero", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.GrupoFinanciero", "GrupoFinanciero")
+                        .WithMany("Movimientos")
+                        .HasForeignKey("GrupoFinancieroId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany("Grupos")
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GrupoFinanciero");
+
+                    b.Navigation("Movimiento");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.ReglaAsignacion", b =>
+                {
+                    b.HasOne("Parkking.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId");
+
+                    b.HasOne("Parkking.Models.Finanzas.GrupoFinanciero", "GrupoFinanciero")
+                        .WithMany("Reglas")
+                        .HasForeignKey("GrupoFinancieroId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Parkking.Models.Finanzas.TipoGasto", "TipoGasto")
+                        .WithMany("Reglas")
+                        .HasForeignKey("TipoGastoId");
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("GrupoFinanciero");
+
+                    b.Navigation("TipoGasto");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Reintegro", b =>
+                {
+                    b.HasOne("Parkking.Models.Finanzas.Movimiento", "Movimiento")
+                        .WithMany()
+                        .HasForeignKey("MovimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Movimiento");
+                });
+
             modelBuilder.Entity("Parkking.Models.MetodoDePago", b =>
                 {
                     b.HasOne("Parkking.Models.DatosEstacionamiento", "Estacionamiento")
@@ -1186,37 +1904,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Estacionamiento");
-                });
-
-            modelBuilder.Entity("Parkking.Models.MovimientoCaja", b =>
-                {
-                    b.HasOne("Parkking.Models.Abono", "Abono")
-                        .WithMany()
-                        .HasForeignKey("AbonoId");
-
-                    b.HasOne("Parkking.Models.CajaMensual", "CajaMensual")
-                        .WithMany("Movimientos")
-                        .HasForeignKey("CajaMensualId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Parkking.Models.Pago", "Pago")
-                        .WithMany("Movimientos")
-                        .HasForeignKey("PagoId");
-
-                    b.HasOne("Parkking.Models.Seguridad.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Abono");
-
-                    b.Navigation("CajaMensual");
-
-                    b.Navigation("Pago");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Parkking.Models.Pago", b =>
@@ -1348,11 +2035,6 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("VehiculosFijos");
                 });
 
-            modelBuilder.Entity("Parkking.Models.CajaMensual", b =>
-                {
-                    b.Navigation("Movimientos");
-                });
-
             modelBuilder.Entity("Parkking.Models.Cliente", b =>
                 {
                     b.Navigation("Abonos");
@@ -1372,11 +2054,30 @@ namespace Parkking.Infrastructure.Persistence.Migrations
                     b.Navigation("DetallesPago");
                 });
 
+            modelBuilder.Entity("Parkking.Models.Finanzas.GrupoFinanciero", b =>
+                {
+                    b.Navigation("Movimientos");
+
+                    b.Navigation("Reglas");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.Movimiento", b =>
+                {
+                    b.Navigation("Auditorias");
+
+                    b.Navigation("Grupos");
+                });
+
+            modelBuilder.Entity("Parkking.Models.Finanzas.TipoGasto", b =>
+                {
+                    b.Navigation("Gastos");
+
+                    b.Navigation("Reglas");
+                });
+
             modelBuilder.Entity("Parkking.Models.Pago", b =>
                 {
                     b.Navigation("Detalles");
-
-                    b.Navigation("Movimientos");
 
                     b.Navigation("Recibo");
                 });

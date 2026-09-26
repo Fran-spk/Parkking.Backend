@@ -55,8 +55,10 @@ public class ClienteService
         {
             EstacionamientoId = _estacionamiento.EstacionamientoId,
             Nombre = request.Nombre,
+            Documento = string.IsNullOrWhiteSpace(request.Documento) ? null : request.Documento.Trim(),
+            Domicilio = string.IsNullOrWhiteSpace(request.Domicilio) ? null : request.Domicilio.Trim(),
             Telefono = request.Telefono,
-            Email = request.Email,
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
             Observacion = request.Observacion,
             Activo = true
         };
@@ -71,8 +73,10 @@ public class ClienteService
         if (!cliente.Activo) throw new Exception("El cliente está dado de baja");
 
         cliente.Nombre = request.Nombre;
+        cliente.Documento = string.IsNullOrWhiteSpace(request.Documento) ? null : request.Documento.Trim();
+        cliente.Domicilio = string.IsNullOrWhiteSpace(request.Domicilio) ? null : request.Domicilio.Trim();
         cliente.Telefono = request.Telefono;
-        cliente.Email = request.Email;
+        cliente.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
         cliente.Observacion = request.Observacion;
         _repository.SaveChanges();
         return cliente;

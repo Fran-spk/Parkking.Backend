@@ -21,16 +21,21 @@ public class CrearAbonoRequest
     public string? ModeloVehiculo { get; set; }
 
     public string? Cobrador { get; set; }
+    /// <summary>Email de avisos del abono (opcional; si falta, usa el del cliente).</summary>
+    public string? Email { get; set; }
     public string FechaInicio { get; set; } = string.Empty;
     public string? FechaInicioCobro { get; set; }
     public decimal? PrecioAcordado { get; set; }
     public PeriodicidadCobro PeriodicidadCobro { get; set; } = PeriodicidadCobro.Mensual;
+    /// <summary>Prorratear | OmitirMesEntrante | PeriodoCompleto. Default: PeriodoCompleto.</summary>
+    public PoliticaPrimerPeriodo PoliticaPrimerPeriodo { get; set; } = PoliticaPrimerPeriodo.PeriodoCompleto;
 }
 
 public class ModificarAbonoRequest
 {
     public string? Cobrador { get; set; }
     public decimal? PrecioAcordado { get; set; }
+    public string? Email { get; set; }
 }
 
 public class AsignarVehiculoAbonoRequest
@@ -103,10 +108,12 @@ public class AbonoDto
 
     public int ClienteId { get; set; }
     public string? Cobrador { get; set; }
+    public string? Email { get; set; }
     public DateOnly FechaInicio { get; set; }
     public DateOnly FechaInicioCobro { get; set; }
     public decimal? PrecioAcordado { get; set; }
     public PeriodicidadCobro PeriodicidadCobro { get; set; } = PeriodicidadCobro.Mensual;
+    public PoliticaPrimerPeriodo PoliticaPrimerPeriodo { get; set; } = PoliticaPrimerPeriodo.PeriodoCompleto;
     public bool Activo { get; set; }
 
     public ClienteResumenDto? Cliente { get; set; }

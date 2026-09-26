@@ -86,12 +86,6 @@ public class AbonoRepository
             .Include(c => c.VehiculosPermitidos)
             .FirstOrDefault(c => c.CocheraId == id);
 
-    public Cochera? GetCocheraDestino(int cocheraId, int estacionamientoId) =>
-        _context.Cocheras
-            .Include(c => c.Plazas).ThenInclude(p => p.Abono)
-            .Include(c => c.VehiculosPermitidos)
-            .FirstOrDefault(c => c.CocheraId == cocheraId && c.EstacionamientoId == estacionamientoId && c.Activo);
-
     public AbonoPlaza? GetPlaza(int abonoPlazaId) =>
         _context.AbonoPlazas
             .Include(p => p.Abono)

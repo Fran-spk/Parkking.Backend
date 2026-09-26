@@ -29,6 +29,28 @@ public class CocheraService
                      && c.EstaDisponible())
             .OrderBy(c => c.Numero).ToList();
 
+    /// <summary>
+    /// Cochera activa del tenant con cupo libre para un abono más.
+    /// </summary>
+    public Cochera ValidarDisponible(int cocheraId)
+    {
+        var cochera = _repository.GetById(cocheraId, TenantId)
+            ?? throw new Exception($"Cochera {cocheraId} no encontrada o inactiva");
+
+        var activos = cochera.ContarAbonosActivos();
+        var cupo = cochera.CapacidadMaxima();
+        if (activos >= cupo)
+        {
+            if (!cochera.MultipleOcupacion)
+                throw new Exception($"La cochera {cochera.Numero} no admite múltiples ocupaciones");
+
+            throw new Exception(
+                $"La cochera {cochera.Numero} alcanzó el máximo de ocupación ({activos}/{cupo})");
+        }
+
+        return cochera;
+    }
+
     public Cochera Create(CocheraRequest request)
     {
         if (_repository.ExisteNumero(TenantId, request.Numero))
@@ -36,6 +58,8 @@ public class CocheraService
 
         if (request.EstadoCochera == EstadoCochera.Habilitada && !string.IsNullOrEmpty(request.Observacion))
             throw new Exception("No se puede cargar observación si la cochera está habilitada");
+
+        var maxOcupacion = ResolverMaxOcupacion(request);
 
         var cochera = new Cochera
         {
@@ -45,6 +69,7 @@ public class CocheraService
             EstadoCochera = request.EstadoCochera,
             CategoriaCocheraId = request.CategoriaCocheraId,
             MultipleOcupacion = request.MultipleOcupacion,
+            MaxOcupacion = maxOcupacion,
             Activo = true
         };
 
@@ -63,11 +88,27 @@ public class CocheraService
         if (request.EstadoCochera == EstadoCochera.Habilitada && !string.IsNullOrEmpty(request.Observacion))
             throw new Exception("No se puede cargar observación si la cochera está habilitada");
 
+        var maxOcupacion = ResolverMaxOcupacion(request);
+        var activos = cochera.ContarAbonosActivos();
+        if (request.MultipleOcupacion)
+        {
+            var cupo = maxOcupacion ?? 2;
+            if (activos > cupo)
+                throw new Exception(
+                    $"La cochera ya tiene {activos} abonos activos; el máximo no puede ser menor ({cupo}).");
+        }
+        else if (activos > 1)
+        {
+            throw new Exception(
+                $"La cochera tiene {activos} abonos activos; no se puede desactivar la múltiple ocupación.");
+        }
+
         cochera.Numero = request.Numero;
         cochera.Observacion = request.Observacion;
         cochera.EstadoCochera = request.EstadoCochera;
         cochera.CategoriaCocheraId = request.CategoriaCocheraId;
         cochera.MultipleOcupacion = request.MultipleOcupacion;
+        cochera.MaxOcupacion = maxOcupacion;
         cochera.VehiculosPermitidos.Clear();
 
         if (request.VehiculosPermitidosIds != null)
@@ -86,5 +127,19 @@ public class CocheraService
 
         cochera.Activo = false;
         _repository.SaveChanges();
+    }
+
+    private static int? ResolverMaxOcupacion(CocheraRequest request)
+    {
+        if (!request.MultipleOcupacion)
+            return null;
+
+        var max = request.MaxOcupacion ?? 2;
+        if (max < 2)
+            throw new Exception("Con múltiple ocupación el máximo debe ser al menos 2.");
+        if (max > 50)
+            throw new Exception("El máximo de ocupación no puede superar 50.");
+
+        return max;
     }
 }

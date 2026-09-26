@@ -2,6 +2,7 @@ using System.Globalization;
 using Parkking.DTOs.Dashboard;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
+using Parkking.Models.Cobro;
 using Parkking.Models.Enums;
 using Parkking.Repositories;
 
@@ -108,9 +109,11 @@ public class DashboardService
             var periodos = 0;
             DateOnly? primerImpago = null;
 
-            foreach (var (inicio, _) in PeriodicidadHelper.EnumerarPeriodos(
-                         abono.FechaInicioCobro, hoy, abono.PeriodicidadCobro))
+            var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+            var ancla = PeriodicidadStrategyFactory.AnclaDesdeFechaInicio(abono.FechaInicio);
+            foreach (var periodo in strategy.Enumerar(abono.FechaInicioCobro, hoy, ancla))
             {
+                var inicio = periodo.Inicio;
                 var cuota = abono.Cuotas.FirstOrDefault(c =>
                     c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == inicio);
 

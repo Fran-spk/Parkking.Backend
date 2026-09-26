@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 using Parkking.Models.Enums;
 
 namespace Parkking.Models;
@@ -13,6 +14,18 @@ public class DatosEstacionamiento
     public string Nombre { get; set; } = string.Empty;
     public string Direccion { get; set; } = string.Empty;
 
+    /// <summary>Nombre del locador en el contrato (titular). Si vacío, el PDF usa Nombre.</summary>
+    [MaxLength(150)]
+    public string? LocadorNombre { get; set; }
+
+    /// <summary>DNI / CUIT del locador para el contrato.</summary>
+    [MaxLength(30)]
+    public string? LocadorDocumento { get; set; }
+
+    /// <summary>Domicilio del locador. Si vacío, el PDF usa Direccion del inmueble.</summary>
+    [MaxLength(200)]
+    public string? LocadorDomicilio { get; set; }
+
     /// <summary>Día del mes en que vencen las cuotas mensuales (1–31).</summary>
     public int DiaVencimientoAbono { get; set; }
 
@@ -21,12 +34,6 @@ public class DatosEstacionamiento
 
     /// <summary>% de mora sobre el monto (solo si <see cref="AplicaRecargo"/>).</summary>
     public decimal PorcentajeRecargo { get; set; }
-
-    /// <summary>
-    /// Día del mes a partir del cual el ingreso genera 1ª cuota prorrateada
-    /// (solo periodicidad mensual). Null = no prorratear nunca.
-    /// </summary>
-    public int? DiasUmbralProporcional { get; set; }
 
     /// <summary>Baja lógica del estacionamiento.</summary>
     public bool Activo { get; set; } = true;
@@ -38,36 +45,36 @@ public class DatosEstacionamiento
     public bool ImprimirReciboAlCobrar { get; set; } = true;
 
     /// <summary>
-    /// Importe de la primera cuota: base o prorrateo según umbral.
-    /// Nunca incluye recargo (la mora se calcula al cobrar, si corresponde).
+    /// Si true, al registrar un pago se envía el recibo por email al cliente
+    /// (Abono.Email ?? Cliente.Email). Fallo de mail no revierte el cobro.
     /// </summary>
-    public decimal CalcularMontoPrimeraCuota(
-        decimal montoBase,
-        DateOnly fechaIngreso,
-        DateOnly periodoInicioCobro,
-        PeriodicidadCobro periodicidad)
-    {
-        if (montoBase <= 0)
-            return 0;
+    public bool EnviarReciboPorEmail { get; set; }
 
-        if (periodicidad != PeriodicidadCobro.Mensual)
-            return montoBase;
+    /// <summary>
+    /// Solo afecta el PDF de contrato: incluye la cláusula de seguro obligatorio.
+    /// No cambia validaciones ni pantallas de abonos/cobros.
+    /// </summary>
+    public bool ContratoSeguroObligatorio { get; set; } = true;
 
-        var (periodoIngreso, _) = PeriodicidadHelper.PeriodoQueContiene(fechaIngreso, periodicidad);
-        if (periodoIngreso != periodoInicioCobro)
-            return montoBase;
+    /// <summary>
+    /// Plazo genérico del contrato en meses (todas las cocheras del estacionamiento).
+    /// Solo se usa al generar el PDF; el abono sigue siendo vigente hasta la baja.
+    /// </summary>
+    public int ContratoPlazoMeses { get; set; } = 12;
 
-        if (DiasUmbralProporcional is null)
-            return montoBase;
+    /// <summary>
+    /// Si true, al crear un abono el front descarga automáticamente el PDF de contrato.
+    /// No persiste el PDF: se regenera bajo demanda.
+    /// </summary>
+    public bool GenerarContratoAlCrearAbono { get; set; } = true;
 
-        var dia = fechaIngreso.Day;
-        if (dia <= DiasUmbralProporcional.Value)
-            return montoBase;
-
-        var diasMes = DateTime.DaysInMonth(fechaIngreso.Year, fechaIngreso.Month);
-        var diasRestantes = diasMes - dia + 1;
-        return Math.Round((montoBase / diasMes) * diasRestantes, 0);
-    }
+    /// <summary>
+    /// Email de contacto del estacionamiento (destino de avisos/reportes Parkking → estacionamiento).
+    /// No es el remitente SMTP: todos los mails salen desde la casilla Parkking (.env).
+    /// </summary>
+    [Required]
+    [MaxLength(200)]
+    public string EmailAvisos { get; set; } = string.Empty;
 
     /// <summary>
     /// Recargo sugerido por mora. 0 si no aplica, o si aún no venció el período.

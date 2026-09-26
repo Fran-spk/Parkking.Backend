@@ -14,22 +14,19 @@ public class EstacionamientoController : ControllerBase
 {
     private readonly EstacionamientoService _service;
     private readonly SesionService _authService;
-    public EstacionamientoController(EstacionamientoService service,SesionService sesion)
+
+    public EstacionamientoController(EstacionamientoService service, SesionService sesion)
     {
         _service = service;
         _authService = sesion;
     }
 
     [HttpGet]
-    public IActionResult GetActual()
+    public ActionResult<DatosEstacionamientoDto> GetActual()
     {
         try
         {
-            return Ok(
-                _service
-                    .GetActual()
-                    .Adapt<DatosEstacionamientoDto>()
-            );
+            return Ok(_service.GetActual().Adapt<DatosEstacionamientoDto>());
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -42,17 +39,29 @@ public class EstacionamientoController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult CrearEstacionamiento(CrearEstacionamientoRequest request)
+    public ActionResult<DatosEstacionamientoDto> CrearEstacionamiento(CrearEstacionamientoRequest request)
     {
-        _service.Crear(request);
-        return Ok();
+        try
+        {
+            return Ok(_service.Crear(request).Adapt<DatosEstacionamientoDto>());
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPut]
-    public IActionResult ModificarEstacionamiento(CrearEstacionamientoRequest request)
+    public ActionResult<DatosEstacionamientoDto> ModificarEstacionamiento(EditarEstacionamientoRequest request)
     {
-        _service.Editar(request);
-        return Ok();
+        try
+        {
+            return Ok(_service.Editar(request).Adapt<DatosEstacionamientoDto>());
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpDelete]
@@ -64,7 +73,7 @@ public class EstacionamientoController : ControllerBase
 
     [Authorize]
     [HttpGet("misEstacionamientos")]
-    public IActionResult GetEstacionamientos()
+    public ActionResult<IEnumerable<EstacionamientoUsuarioDto>> GetEstacionamientos()
     {
         var usuarioId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         return Ok(_authService.GetEstacionamientos(usuarioId));

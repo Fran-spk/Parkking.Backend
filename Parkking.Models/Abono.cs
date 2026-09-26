@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Parkking.Models.Cobro;
 using Parkking.Models.Enums;
 
 namespace Parkking.Models;
@@ -23,6 +24,13 @@ public class Abono : IMultiTenant
     [MaxLength(100)]
     public string? Cobrador { get; set; }
 
+    /// <summary>
+    /// Email de contacto del abono para avisos (recibo, etc.).
+    /// Si es null, se usa el email del cliente.
+    /// </summary>
+    [MaxLength(200)]
+    public string? Email { get; set; }
+
     [Required]
     public DateOnly FechaInicio { get; set; }
 
@@ -33,6 +41,9 @@ public class Abono : IMultiTenant
     public decimal? PrecioAcordado { get; set; }
 
     public PeriodicidadCobro PeriodicidadCobro { get; set; } = PeriodicidadCobro.Mensual;
+
+    /// <summary>Tratamiento del mes de alta (prorratear / omitir mes entrante / completo).</summary>
+    public PoliticaPrimerPeriodo PoliticaPrimerPeriodo { get; set; } = PoliticaPrimerPeriodo.PeriodoCompleto;
 
     public bool Activo { get; set; } = true;
 
@@ -49,14 +60,16 @@ public class Abono : IMultiTenant
     public DateOnly? ObtenerPrimerPeriodoImpago()
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
-        foreach (var (inicio, _) in PeriodicidadHelper.EnumerarPeriodos(FechaInicioCobro, hoy, PeriodicidadCobro))
+        var strategy = PeriodicidadStrategyFactory.For(PeriodicidadCobro);
+        var ancla = PeriodicidadStrategyFactory.AnclaDesdeFechaInicio(FechaInicio);
+        foreach (var periodo in strategy.Enumerar(FechaInicioCobro, hoy, ancla))
         {
             var cuota = Cuotas.FirstOrDefault(c =>
                 c.Estado != EstadoCuota.Anulada &&
-                c.PeriodoInicio == inicio);
+                c.PeriodoInicio == periodo.Inicio);
 
             if (cuota == null || cuota.Estado is EstadoCuota.Pendiente or EstadoCuota.Parcial)
-                return inicio;
+                return periodo.Inicio;
         }
 
         return null;

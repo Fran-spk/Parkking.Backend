@@ -1,6 +1,7 @@
 using Parkking.DTOs.Abonos;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
+using Parkking.Models.Cobro;
 using Parkking.Models.Enums;
 using Parkking.Repositories;
 
@@ -10,15 +11,18 @@ public class AbonoService
 {
     private readonly AbonoRepository _repository;
     private readonly AbonoPrecioService _precioService;
+    private readonly CocheraService _cocheraService;
     private readonly IEstacionamientoContext _estacionamiento;
 
     public AbonoService(
         AbonoRepository repository,
         AbonoPrecioService precioService,
+        CocheraService cocheraService,
         IEstacionamientoContext estacionamiento)
     {
         _repository = repository;
         _precioService = precioService;
+        _cocheraService = cocheraService;
         _estacionamiento = estacionamiento;
     }
 
@@ -71,26 +75,27 @@ public class AbonoService
                 "Los abonos con vehículos flexibles requieren precio acordado.");
         }
 
-        var (fechaInicio, fechaInicioCobro) = ParseFechas(request.FechaInicio, request.FechaInicioCobro);
+        if (!Enum.IsDefined(typeof(PoliticaPrimerPeriodo), request.PoliticaPrimerPeriodo))
+            throw new Exception("Política de primer período inválida.");
 
-        // Normalizar inicio de cobro al inicio del período según periodicidad
-        var (periodoInicioCobro, periodoFinCobro) =
-            PeriodicidadHelper.PeriodoQueContiene(fechaInicioCobro, request.PeriodicidadCobro);
-        fechaInicioCobro = periodoInicioCobro;
+        var (fechaInicio, _) = ParseFechas(request.FechaInicio, request.FechaInicioCobro);
 
         foreach (var cocheraId in cocheraIds)
-            ValidarCocheraDisponible(cocheraId);
+            _cocheraService.ValidarDisponible(cocheraId);
 
         var abono = new Abono
         {
             ClienteId = request.ClienteId,
             EstacionamientoId = TenantId,
             Cobrador = request.Cobrador,
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
             PrecioAcordado = request.PrecioAcordado,
             PeriodicidadCobro = request.PeriodicidadCobro,
+            PoliticaPrimerPeriodo = request.PoliticaPrimerPeriodo,
             Activo = true,
             FechaInicio = fechaInicio,
-            FechaInicioCobro = fechaInicioCobro
+            // Se ajusta en GenerarPrimeraCuota según la política.
+            FechaInicioCobro = fechaInicio,
         };
 
         foreach (var cocheraId in cocheraIds)
@@ -109,9 +114,8 @@ public class AbonoService
         foreach (var vehiculoReq in vehiculosReq)
             AsignarVehiculoInterno(abono.AbonoId, request.ClienteId, vehiculoReq);
 
-        // Recargar con plazas/vehículos para calcular monto y generar 1ª cuota
         abono = _repository.LoadWithIncludes(abono.AbonoId)!;
-        GenerarPrimeraCuota(abono, periodoInicioCobro, periodoFinCobro);
+        GenerarPrimeraCuota(abono);
 
         return _repository.LoadWithIncludes(abono.AbonoId)!;
     }
@@ -131,6 +135,7 @@ public class AbonoService
 
         abono.Cobrador = request.Cobrador;
         abono.PrecioAcordado = request.PrecioAcordado;
+        abono.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
         _repository.SaveChanges();
         return _repository.LoadWithIncludes(id)!;
     }
@@ -141,7 +146,7 @@ public class AbonoService
         if (_repository.ExistePlazaActiva(abonoId, request.CocheraId))
             throw new Exception("La cochera ya está asignada a este abono");
 
-        ValidarCocheraDisponible(request.CocheraId);
+        _cocheraService.ValidarDisponible(request.CocheraId);
 
         _repository.AddPlaza(new AbonoPlaza
         {
@@ -187,7 +192,7 @@ public class AbonoService
         if (_repository.ExistePlazaActiva(abonoId, nuevaCocheraId))
             throw new Exception("La cochera destino ya está en este abono");
 
-        var nuevaCochera = ValidarCocheraDisponible(nuevaCocheraId);
+        var nuevaCochera = _cocheraService.ValidarDisponible(nuevaCocheraId);
 
         foreach (var fijo in plaza.VehiculosFijos)
             ValidarTipoPermitido(nuevaCochera, fijo.Vehiculo.TipoVehiculoId);
@@ -436,18 +441,6 @@ public class AbonoService
         throw new Exception("Se requiere AbonoPlazaId o CocheraId para modalidad Fijo");
     }
 
-    private Cochera ValidarCocheraDisponible(int cocheraId)
-    {
-        var cochera = _repository.GetCocheraDestino(cocheraId, TenantId)
-            ?? throw new Exception($"Cochera {cocheraId} no encontrada o inactiva");
-
-        var activos = cochera.Plazas.Count(p => p.Activo && p.Abono.Activo);
-        if (activos > 0 && !cochera.MultipleOcupacion)
-            throw new Exception($"La cochera {cochera.Numero} no admite múltiples ocupaciones");
-
-        return cochera;
-    }
-
     private static void ValidarTipoPermitido(Cochera cochera, int tipoVehiculoId)
     {
         if (!cochera.VehiculosPermitidos.Any())
@@ -456,42 +449,37 @@ public class AbonoService
             throw new Exception($"El tipo de vehículo no está permitido en la cochera {cochera.Numero}");
     }
 
-    private void GenerarPrimeraCuota(Abono abono, DateOnly periodoInicio, DateOnly periodoFin)
+    private void GenerarPrimeraCuota(Abono abono)
     {
-        if (abono.Cuotas.Any(c => c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == periodoInicio))
+        var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+        var ancla = PeriodicidadStrategyFactory.AnclaDesdeFechaInicio(abono.FechaInicio);
+        var cicloNatural = strategy.CicloQueContiene(abono.FechaInicio, ancla);
+
+        var precio = _precioService.ResolverParaPeriodo(abono, cicloNatural.Inicio, cicloNatural.Fin);
+        var primer = strategy.ResolverPrimerPeriodo(
+            abono.FechaInicio,
+            abono.PoliticaPrimerPeriodo,
+            precio.Monto,
+            ancla);
+
+        if (abono.Cuotas.Any(c =>
+                c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == primer.Periodo.Inicio))
             return;
 
-        var precio = _precioService.ResolverParaPeriodo(abono, periodoInicio, periodoFin);
-        var monto = CalcularMontoPrimeraCuota(abono, periodoInicio, precio.Monto);
-        var detalles = _precioService.CrearDetallesLiquidacion(abono, precio, monto);
+        abono.FechaInicioCobro = primer.Periodo.Inicio;
+        var detalles = _precioService.CrearDetallesLiquidacion(abono, precio, primer.Monto);
 
         _repository.AddCuota(new Cuota
         {
             AbonoId = abono.AbonoId,
             EstacionamientoId = abono.EstacionamientoId,
-            PeriodoInicio = periodoInicio,
-            PeriodoFin = periodoFin,
-            Monto = monto,
+            PeriodoInicio = primer.Periodo.Inicio,
+            PeriodoFin = primer.Periodo.Fin,
+            Monto = primer.Monto,
             Estado = EstadoCuota.Pendiente,
             Detalles = detalles,
         });
         _repository.SaveChanges();
-    }
-
-    /// <summary>
-    /// Monto de la 1ª cuota según DatosEstacionamiento (prorrateo por umbral).
-    /// Sin recargo: la mora se calcula al cobrar.
-    /// </summary>
-    private decimal CalcularMontoPrimeraCuota(Abono abono, DateOnly periodoInicio, decimal montoBase)
-    {
-        var datos = _repository.GetEstacionamiento(TenantId)
-            ?? throw new Exception("No se encontraron los datos del estacionamiento.");
-
-        return datos.CalcularMontoPrimeraCuota(
-            montoBase,
-            abono.FechaInicio,
-            periodoInicio,
-            abono.PeriodicidadCobro);
     }
 
     private static List<int> ResolveCocheraIds(CrearAbonoRequest request)

@@ -43,7 +43,8 @@ public class SesionService
             {
                 Id = e.EstacionamientoId,
                 Nombre = e.Nombre,
-                Direccion = e.Direccion
+                Direccion = e.Direccion,
+                EmailAvisos = e.EmailAvisos,
             }).ToList();
 
     public void ValidarAccesoEstacionamiento(int usuarioId, int estacionamientoId)

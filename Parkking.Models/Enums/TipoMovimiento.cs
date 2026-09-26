@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,9 @@ namespace Parkking.Models.Enums
 {
     public enum TipoMovimiento
     {
-        Ingreso,
-        Egreso
+        Ingreso = 0,
+        Egreso = 1,
+        Reintegro = 2,
+        Ajuste = 3
     }
 }

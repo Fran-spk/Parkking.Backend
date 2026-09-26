@@ -39,7 +39,6 @@ public class Pago : IMultiTenant
     public MetodoDePago? MetodoDePago { get; set; }
 
     public ICollection<DetallePago> Detalles { get; set; } = new List<DetallePago>();
-    public ICollection<MovimientoCaja> Movimientos { get; set; } = new List<MovimientoCaja>();
 
     /// <summary>Comprobante generado al cobrar (1:1).</summary>
     public Recibo? Recibo { get; set; }

@@ -1,4 +1,4 @@
-﻿using Parkking.DTOs.Estacionamiento;
+using Parkking.DTOs.Estacionamiento;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
 using Parkking.Repositories;
@@ -27,42 +27,72 @@ public class EstacionamientoService
         _repository.GetById(TenantId)
             ?? throw new Exception("No se encontraron los datos del estacionamiento.");
 
-    public void Crear(CrearEstacionamientoRequest request)
+    public DatosEstacionamiento Crear(CrearEstacionamientoRequest request)
     {
-        Validar(request);
+        Validar(
+            request.Nombre,
+            request.Direccion,
+            request.EmailAvisos,
+            request.DiaVencimientoAbono,
+            request.AplicaRecargo,
+            request.PorcentajeRecargo,
+            request.ContratoPlazoMeses);
 
         var datos = new DatosEstacionamiento
         {
             Nombre = request.Nombre.Trim(),
             Direccion = request.Direccion.Trim(),
+            LocadorNombre = string.IsNullOrWhiteSpace(request.LocadorNombre) ? null : request.LocadorNombre.Trim(),
+            LocadorDocumento = string.IsNullOrWhiteSpace(request.LocadorDocumento) ? null : request.LocadorDocumento.Trim(),
+            LocadorDomicilio = string.IsNullOrWhiteSpace(request.LocadorDomicilio) ? null : request.LocadorDomicilio.Trim(),
             DiaVencimientoAbono = request.DiaVencimientoAbono,
             AplicaRecargo = request.AplicaRecargo,
             PorcentajeRecargo = request.AplicaRecargo ? request.PorcentajeRecargo : 0,
-            DiasUmbralProporcional = request.DiasUmbralProporcional,
             ImprimirReciboAlCobrar = request.ImprimirReciboAlCobrar,
+            EnviarReciboPorEmail = request.EnviarReciboPorEmail,
+            ContratoSeguroObligatorio = request.ContratoSeguroObligatorio,
+            ContratoPlazoMeses = request.ContratoPlazoMeses,
+            GenerarContratoAlCrearAbono = request.GenerarContratoAlCrearAbono,
+            EmailAvisos = request.EmailAvisos.Trim(),
             Activo = true
         };
 
         _repository.Add(datos);
         _metodoDePagoService.SeedDefaults(datos.EstacionamientoId);
+        return datos;
     }
 
-    public void Editar(CrearEstacionamientoRequest request)
+    public DatosEstacionamiento Editar(EditarEstacionamientoRequest request)
     {
-        Validar(request);
+        Validar(
+            request.Nombre,
+            request.Direccion,
+            request.EmailAvisos,
+            request.DiaVencimientoAbono,
+            request.AplicaRecargo,
+            request.PorcentajeRecargo,
+            request.ContratoPlazoMeses);
 
         var datos = _repository.GetById(TenantId)
             ?? throw new Exception("No se encontraron los datos del estacionamiento.");
 
         datos.Nombre = request.Nombre.Trim();
         datos.Direccion = request.Direccion.Trim();
+        datos.LocadorNombre = string.IsNullOrWhiteSpace(request.LocadorNombre) ? null : request.LocadorNombre.Trim();
+        datos.LocadorDocumento = string.IsNullOrWhiteSpace(request.LocadorDocumento) ? null : request.LocadorDocumento.Trim();
+        datos.LocadorDomicilio = string.IsNullOrWhiteSpace(request.LocadorDomicilio) ? null : request.LocadorDomicilio.Trim();
         datos.DiaVencimientoAbono = request.DiaVencimientoAbono;
         datos.AplicaRecargo = request.AplicaRecargo;
         datos.PorcentajeRecargo = request.AplicaRecargo ? request.PorcentajeRecargo : 0;
-        datos.DiasUmbralProporcional = request.DiasUmbralProporcional;
         datos.ImprimirReciboAlCobrar = request.ImprimirReciboAlCobrar;
+        datos.EnviarReciboPorEmail = request.EnviarReciboPorEmail;
+        datos.ContratoSeguroObligatorio = request.ContratoSeguroObligatorio;
+        datos.ContratoPlazoMeses = request.ContratoPlazoMeses;
+        datos.GenerarContratoAlCrearAbono = request.GenerarContratoAlCrearAbono;
+        datos.EmailAvisos = request.EmailAvisos.Trim();
 
         _repository.Update(datos);
+        return datos;
     }
 
     public void BajaLogica()
@@ -74,24 +104,37 @@ public class EstacionamientoService
         _repository.Update(datos);
     }
 
-    private static void Validar(CrearEstacionamientoRequest request)
+    private static void Validar(
+        string nombre,
+        string direccion,
+        string emailAvisos,
+        int diaVencimiento,
+        bool aplicaRecargo,
+        decimal porcentajeRecargo,
+        int contratoPlazoMeses)
     {
-        if (string.IsNullOrWhiteSpace(request.Nombre))
+        if (string.IsNullOrWhiteSpace(nombre))
             throw new Exception("Debe ingresar un nombre.");
 
-        if (string.IsNullOrWhiteSpace(request.Direccion))
+        if (string.IsNullOrWhiteSpace(direccion))
             throw new Exception("Debe ingresar una dirección.");
 
-        if (request.DiaVencimientoAbono < 1 || request.DiaVencimientoAbono > 31)
+        if (string.IsNullOrWhiteSpace(emailAvisos))
+            throw new Exception("Debe ingresar el email de avisos del estacionamiento.");
+
+        if (emailAvisos.Trim().Length > 200)
+            throw new Exception("El email de avisos no puede superar 200 caracteres.");
+
+        if (diaVencimiento < 1 || diaVencimiento > 31)
             throw new Exception("El día de vencimiento debe estar entre 1 y 31.");
 
-        if (request.AplicaRecargo && request.PorcentajeRecargo <= 0)
+        if (aplicaRecargo && porcentajeRecargo <= 0)
             throw new Exception("El porcentaje de recargo debe ser mayor a cero.");
 
-        if (!request.AplicaRecargo && request.PorcentajeRecargo != 0)
+        if (!aplicaRecargo && porcentajeRecargo != 0)
             throw new Exception("No puede ingresar un porcentaje si el recargo está deshabilitado.");
 
-        if (request.DiasUmbralProporcional is < 1 or > 31)
-            throw new Exception("El día umbral proporcional debe estar entre 1 y 31.");
+        if (contratoPlazoMeses < 1 || contratoPlazoMeses > 120)
+            throw new Exception("El plazo del contrato debe estar entre 1 y 120 meses.");
     }
 }

@@ -24,6 +24,9 @@ public class ClienteResumenDto
 {
     public int ClienteId { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public string? Documento { get; set; }
+    public string? Domicilio { get; set; }
     public string? Telefono { get; set; }
+    /// <summary>Opcional.</summary>
     public string? Email { get; set; }
 }

@@ -5,7 +5,10 @@ namespace Parkking.DTOs.Clientes;
 public class ClienteRequest
 {
     public string Nombre { get; set; } = string.Empty;
+    public string? Documento { get; set; }
+    public string? Domicilio { get; set; }
     public string? Telefono { get; set; }
+    /// <summary>Opcional. Vacío se persiste como null.</summary>
     public string? Email { get; set; }
     public string? Observacion { get; set; }
 }
@@ -14,7 +17,10 @@ public class ClienteDto
 {
     public int ClienteId { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public string? Documento { get; set; }
+    public string? Domicilio { get; set; }
     public string? Telefono { get; set; }
+    /// <summary>Opcional.</summary>
     public string? Email { get; set; }
     public string? Observacion { get; set; }
     public bool Activo { get; set; }

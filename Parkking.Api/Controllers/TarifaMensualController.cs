@@ -51,4 +51,18 @@ public class TarifaMensualController : ControllerBase
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
+
+    /// <summary>
+    /// Completa tarifas faltantes (tipo × categoría × todas las periodicidades) del tenant.
+    /// </summary>
+    [HttpPost("completar-faltantes")]
+    public ActionResult<object> CompletarFaltantes([FromQuery] decimal precioMensualDefault = 50000)
+    {
+        try
+        {
+            var creadas = _service.CompletarFaltantes(precioMensualDefault);
+            return Ok(new { creadas, mensaje = $"Se crearon {creadas} tarifas faltantes." });
+        }
+        catch (Exception ex) { return BadRequest(ex.Message); }
+    }
 }

@@ -13,9 +13,11 @@ public class PagoController : ControllerBase
     public PagoController(PagoService service) => _service = service;
 
     [HttpPost("pagar")]
-    public ActionResult RegistrarPago([FromBody] RegistrarPagoRequest request)
+    public async Task<ActionResult> RegistrarPago(
+        [FromBody] RegistrarPagoRequest request,
+        CancellationToken ct)
     {
-        try { return Ok(_service.RegistrarPago(request)); }
+        try { return Ok(await _service.RegistrarPagoAsync(request, ct)); }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
 

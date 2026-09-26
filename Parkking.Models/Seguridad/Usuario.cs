@@ -23,8 +23,9 @@ namespace Parkking.Models.Seguridad
         [StringLength(64)]
         public string Clave { get; set; }
 
+        [Required]
         [StringLength(60)]
-        public string Mail { get; set; }
+        public string Mail { get; set; } = string.Empty;
 
         [StringLength(60)]
         public string Nombre{ get; set; }

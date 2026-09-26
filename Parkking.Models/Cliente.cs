@@ -16,6 +16,14 @@ namespace Parkking.Models
         [MaxLength(100)]
         public string Nombre { get; set; }
 
+        /// <summary>DNI / documento del cliente (locatario del contrato).</summary>
+        [MaxLength(30)]
+        public string? Documento { get; set; }
+
+        /// <summary>Domicilio del cliente para el contrato y notificaciones.</summary>
+        [MaxLength(200)]
+        public string? Domicilio { get; set; }
+
         [MaxLength(20)]
         public string? Telefono { get; set; }
 

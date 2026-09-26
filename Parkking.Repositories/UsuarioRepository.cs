@@ -37,8 +37,17 @@ public class UsuarioRepository
        .FirstOrDefault(u => u.USU_ID == usuarioId);
         return usu;
     }
- 
-      
+
+    public List<Usuario> GetActivosPorEstacionamiento(int estacionamientoId) =>
+        _context.Usuarios
+            .AsNoTracking()
+            .Where(u =>
+                u.Estado_Usuario != Models.Enums.EstadoUsuario.Deshabilitado
+                && u.Usuario_Estacionamiento.Any(ue =>
+                    ue.ESTACIONAMIENTO_ID == estacionamientoId && ue.Activo))
+            .OrderBy(u => u.Nombre)
+            .ThenBy(u => u.UsuarioName)
+            .ToList();
 
     public void SaveChanges(Usuario usuario)
     {

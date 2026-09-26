@@ -79,6 +79,67 @@ public class TarifaMensualService
         return tarifa;
     }
 
+    /// <summary>
+    /// Crea tarifas faltantes tipo × categoría × todas las periodicidades.
+    /// Base = tarifa mensual vigente; si no hay, <paramref name="precioMensualDefault"/>.
+    /// Quincenal = base/2; bi/tri/sem/anual = base × N meses.
+    /// </summary>
+    public int CompletarFaltantes(decimal precioMensualDefault = 50_000m)
+    {
+        if (precioMensualDefault <= 0)
+            throw new Exception("El precio mensual por defecto debe ser mayor a cero");
+
+        var factores = new Dictionary<PeriodicidadCobro, decimal>
+        {
+            [PeriodicidadCobro.Mensual] = 1m,
+            [PeriodicidadCobro.Quincenal] = 0.5m,
+            [PeriodicidadCobro.Bimestral] = 2m,
+            [PeriodicidadCobro.Trimestral] = 3m,
+            [PeriodicidadCobro.Semestral] = 6m,
+            [PeriodicidadCobro.Anual] = 12m,
+        };
+
+        var tipos = _repository.GetTipoIdsActivos(TenantId);
+        var cats = _repository.GetCategoriaIdsActivas(TenantId);
+        if (tipos.Count == 0 || cats.Count == 0)
+            return 0;
+
+        var ahora = DateTime.UtcNow;
+        var creadas = 0;
+
+        foreach (var tipoId in tipos)
+        foreach (var catId in cats)
+        {
+            var baseMensual = _repository.PrecioMensualVigente(TenantId, tipoId, catId)
+                ?? precioMensualDefault;
+
+            foreach (var (periodicidad, factor) in factores)
+            {
+                if (_repository.ExisteCombinacion(TenantId, tipoId, catId, periodicidad))
+                    continue;
+
+                var precio = Math.Round(baseMensual * factor, 0, MidpointRounding.AwayFromZero);
+                if (precio < 1) precio = 1;
+
+                _repository.Add(new TarifaMensual
+                {
+                    EstacionamientoId = TenantId,
+                    TipoVehiculoId = tipoId,
+                    CategoriaCocheraId = catId,
+                    PeriodicidadCobro = periodicidad,
+                    Precio = precio,
+                    FechaHoraActualizacion = ahora,
+                });
+                creadas++;
+            }
+        }
+
+        if (creadas > 0)
+            _repository.SaveChanges();
+
+        return creadas;
+    }
+
     public static TarifaVigenteDto ToVigenteDto(TarifaMensual t) => new()
     {
         TarifaMensualId = t.TarifaMensualId,

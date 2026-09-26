@@ -1,39 +1,104 @@
-﻿using Parkking.DTOs.Caja;
-using Parkking.Models;
-using Parkking.Services.Movimientos;
+using Parkking.DTOs.Finanzas;
+using Parkking.Models.Enums;
+using Parkking.Models.Finanzas;
+using Parkking.Repositories;
 
 namespace Parkking.Services;
 
+/// <summary>
+/// Los movimientos se crean desde pagos, ajustes y reintegros.
+/// Este servicio los registra y los lista. No tiene alta propia.
+/// </summary>
 public class MovimientoService
 {
-    private readonly CajaMensualService _cajaService;
+    private readonly FinanzasMovimientoRepository _repository;
+    private readonly CuentaCorrienteService _cuentas;
+    private readonly GrupoFinancieroService _grupos;
 
-    public MovimientoService(CajaMensualService cajaService)
+    public MovimientoService(
+        FinanzasMovimientoRepository repository,
+        CuentaCorrienteService cuentas,
+        GrupoFinancieroService grupos)
     {
-        _cajaService = cajaService;
+        _repository = repository;
+        _cuentas = cuentas;
+        _grupos = grupos;
     }
 
-    public MovimientoCaja RegistrarCargoCliente(
-        RegistrarMovimientoRequest request)
-    {
-        var strategy = new CargoClienteStrategy(request);
+    public List<MovimientoDto> GetAll(int estacionamientoId) =>
+        GetFiltrados(estacionamientoId, null, null, null, null, null, null);
 
-        return _cajaService.RegistrarMovimiento(strategy);
+    public List<MovimientoDto> GetFiltrados(
+        int estacionamientoId,
+        DateTime? desde,
+        DateTime? hasta,
+        int? tipo,
+        int? clienteId,
+        int? usuarioId,
+        int? grupoFinancieroId) =>
+        _repository.Filtrar(estacionamientoId, desde, hasta, tipo, clienteId, usuarioId, grupoFinancieroId, null, null)
+            .Select(Map)
+            .ToList();
+
+    public MovimientoDetalleDto? GetById(int id, int estacionamientoId)
+    {
+        var movimiento = _repository.GetById(id, estacionamientoId);
+        if (movimiento == null) return null;
+        var dto = new MovimientoDetalleDto();
+        Copiar(movimiento, dto);
+        dto.Auditorias = movimiento.Auditorias
+            .OrderByDescending(a => a.FechaHora)
+            .Select(a => new AuditoriaMovimientoDto
+            {
+                AuditoriaMovimientoId = a.AuditoriaMovimientoId,
+                FechaHora = a.FechaHora,
+                UsuarioId = a.UsuarioId,
+                Ip = a.Ip,
+                UserAgent = a.UserAgent,
+                Detalle = a.Detalle
+            })
+            .ToList();
+        return dto;
     }
 
-    public MovimientoCaja RegistrarReintegroCliente(
-        RegistrarMovimientoRequest request)
+    public Movimiento Registrar(Movimiento movimiento, IEnumerable<int> grupoIds, string detalleAuditoria)
     {
-        var strategy = new ReintegroClienteStrategy(request);
+        var cuentaEstacionamiento = _cuentas.AsegurarEstacionamiento();
+        movimiento.CuentaCorrienteEstacionamientoId = cuentaEstacionamiento.CuentaCorrienteEstacionamientoId;
 
-        return _cajaService.RegistrarMovimiento(strategy);
+        CuentaCorrienteCliente? cuentaCliente = null;
+        if (movimiento.ClienteId is int clienteId)
+        {
+            cuentaCliente = _cuentas.AsegurarCliente(clienteId);
+            movimiento.CuentaCorrienteClienteId = cuentaCliente.CuentaCorrienteClienteId;
+        }
+
+        _grupos.AsignarGrupos(movimiento);
+        _repository.Registrar(movimiento, cuentaEstacionamiento, cuentaCliente, grupoIds, detalleAuditoria);
+        return movimiento;
     }
 
-    public MovimientoCaja RegistrarGastoEstacionamiento(
-        RegistrarMovimientoRequest request)
+    private static MovimientoDto Map(Movimiento m)
     {
-        var strategy = new GastoCocheraStrategy(request);
+        var dto = new MovimientoDto();
+        Copiar(m, dto);
+        return dto;
+    }
 
-        return _cajaService.RegistrarMovimiento(strategy);
+    private static void Copiar(Movimiento m, MovimientoDto dto)
+    {
+        dto.MovimientoId = m.MovimientoId;
+        dto.EstacionamientoId = m.EstacionamientoId;
+        dto.CuentaCorrienteEstacionamientoId = m.CuentaCorrienteEstacionamientoId;
+        dto.ClienteId = m.ClienteId;
+        dto.CuentaCorrienteClienteId = m.CuentaCorrienteClienteId;
+        dto.PagoId = m.PagoId;
+        dto.Importe = m.Importe;
+        dto.Tipo = (int)m.Tipo;
+        dto.TipoDescripcion = m.Tipo.ToString();
+        dto.Concepto = m.Concepto;
+        dto.FechaHora = m.FechaHora;
+        dto.UsuarioId = m.UsuarioId;
+        dto.GrupoFinancieroIds = m.Grupos.Select(g => g.GrupoFinancieroId).ToList();
     }
 }

@@ -44,4 +44,37 @@ public class TarifaMensualRepository
 
     public void Add(TarifaMensual tarifa) => _context.TarifasMensuales.Add(tarifa);
     public void SaveChanges() => _context.SaveChanges();
+
+    public List<int> GetTipoIdsActivos(int estacionamientoId) =>
+        _context.TiposVehiculo
+            .Where(t => t.EstacionamientoId == estacionamientoId && t.Activo)
+            .Select(t => t.TipoVehiculoId)
+            .ToList();
+
+    public List<int> GetCategoriaIdsActivas(int estacionamientoId) =>
+        _context.CategoriasCochera
+            .Where(c => c.EstacionamientoId == estacionamientoId && c.Activo)
+            .Select(c => c.CategoriaCocheraId)
+            .ToList();
+
+    public bool ExisteCombinacion(
+        int estacionamientoId,
+        int tipoVehiculoId,
+        int categoriaCocheraId,
+        PeriodicidadCobro periodicidad) =>
+        _context.TarifasMensuales.Any(t =>
+            t.EstacionamientoId == estacionamientoId
+            && t.TipoVehiculoId == tipoVehiculoId
+            && t.CategoriaCocheraId == categoriaCocheraId
+            && t.PeriodicidadCobro == periodicidad);
+
+    public decimal? PrecioMensualVigente(int estacionamientoId, int tipoVehiculoId, int categoriaCocheraId) =>
+        _context.TarifasMensuales
+            .Where(t => t.EstacionamientoId == estacionamientoId
+                     && t.TipoVehiculoId == tipoVehiculoId
+                     && t.CategoriaCocheraId == categoriaCocheraId
+                     && t.PeriodicidadCobro == PeriodicidadCobro.Mensual)
+            .OrderByDescending(t => t.FechaHoraActualizacion)
+            .Select(t => (decimal?)t.Precio)
+            .FirstOrDefault();
 }

@@ -1,8 +1,9 @@
 using Mapster;
 using Parkking.DTOs.Abonos;
-using Parkking.DTOs.Caja;
+using Parkking.DTOs.Estacionamiento;
+using Parkking.DTOs.Usuario;
 using Parkking.Models;
-using Parkking.Models.Enums;
+using Parkking.Models.Seguridad;
 
 namespace Parkking.Api.Mapping;
 
@@ -11,7 +12,24 @@ public static class MapsterConfig
     public static void Register()
     {
         TypeAdapterConfig<Cliente, Parkking.DTOs.Clientes.ClienteDto>.NewConfig()
+            .Map(dest => dest.Email, src => src.Email)
+            .Map(dest => dest.Documento, src => src.Documento)
+            .Map(dest => dest.Domicilio, src => src.Domicilio)
             .Map(dest => dest.Abonos, src => src.Abonos.Where(a => a.Activo));
+
+        TypeAdapterConfig<DatosEstacionamiento, DatosEstacionamientoDto>.NewConfig()
+            .Map(dest => dest.EmailAvisos, src => src.EmailAvisos)
+            .Map(dest => dest.LocadorNombre, src => src.LocadorNombre)
+            .Map(dest => dest.LocadorDocumento, src => src.LocadorDocumento)
+            .Map(dest => dest.LocadorDomicilio, src => src.LocadorDomicilio);
+
+        TypeAdapterConfig<DatosEstacionamiento, EstacionamientoDto>.NewConfig()
+            .Inherits<DatosEstacionamiento, DatosEstacionamientoDto>();
+
+        TypeAdapterConfig<Usuario, UsuarioDto>.NewConfig()
+            .Map(dest => dest.UsuarioId, src => src.USU_ID)
+            .Map(dest => dest.Mail, src => src.Mail)
+            .Map(dest => dest.Telefono, src => string.IsNullOrWhiteSpace(src.Telefono) ? null : src.Telefono);
 
         TypeAdapterConfig<AbonoPlaza, AbonoPlazaDto>.NewConfig()
             .Map(dest => dest.Cochera, src => src.Cochera);
@@ -25,6 +43,7 @@ public static class MapsterConfig
 
         TypeAdapterConfig<Abono, AbonoDto>.NewConfig()
             .Map(dest => dest.AbonoId, src => src.AbonoId)
+            .Map(dest => dest.Email, src => src.Email)
             .Map(dest => dest.Plazas, src => src.Plazas.Where(p => p.Activo).ToList())
             .Map(dest => dest.Vehiculos, src => src.AbonoVehiculos.ToList())
             .Map(dest => dest.CocheraId, src => src.Plazas.Where(p => p.Activo).Select(p => (int?)p.CocheraId).FirstOrDefault())
@@ -39,22 +58,9 @@ public static class MapsterConfig
 
         TypeAdapterConfig<Cochera, Parkking.DTOs.Cocheras.CocheraResponseDto>.NewConfig()
             .Map(dest => dest.EstaDisponible, src => src.EstaDisponible())
+            .Map(dest => dest.AbonosActivos, src => src.ContarAbonosActivos())
+            .Map(dest => dest.CapacidadMaxima, src => src.CapacidadMaxima())
+            .Map(dest => dest.MaxOcupacion, src => src.MultipleOcupacion ? src.CapacidadMaxima() : (int?)null)
             .Map(dest => dest.VehiculosPermitidosIds, src => src.VehiculosPermitidos.Select(v => v.TipoVehiculoId).ToList());
-
-        TypeAdapterConfig<MovimientoCaja, MovimientoCajaDto>.NewConfig()
-            .Map(dest => dest.Tipo, src => (int)src.Tipo)
-            .Map(dest => dest.TipoDescripcion, src => src.Tipo == TipoMovimiento.Ingreso ? "Ingreso" : "Gasto")
-            .Map(dest => dest.TipoConcepto, src => (int)src.TipoConcepto)
-            .Map(dest => dest.TipoConceptoDescripcion, src => GetTipoConceptoDescripcion(src.TipoConcepto))
-            .Map(dest => dest.Usuario, src => src.Usuario.UsuarioName ?? "User no encontrado");
     }
-
-    private static string GetTipoConceptoDescripcion(TipoConcepto tipo) => tipo switch
-    {
-        TipoConcepto.PagoAbono => "Pago abono",
-        TipoConcepto.ReintegroCliente => "Reintegro cliente",
-        TipoConcepto.GastoCochera => "Gasto cochera",
-        TipoConcepto.CargoCliente => "Cargo cliente",
-        _ => "Otro"
-    };
 }

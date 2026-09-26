@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parkking.Services", "Parkki
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parkking.Api", "Parkking.Api\Parkking.Api.csproj", "{573C8ED4-348D-4C8D-9360-35283E804615}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parkking.Models.Tests", "Parkking.Models.Tests\Parkking.Models.Tests.csproj", "{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -100,6 +102,18 @@ Global
 		{573C8ED4-348D-4C8D-9360-35283E804615}.Release|x64.Build.0 = Release|Any CPU
 		{573C8ED4-348D-4C8D-9360-35283E804615}.Release|x86.ActiveCfg = Release|Any CPU
 		{573C8ED4-348D-4C8D-9360-35283E804615}.Release|x86.Build.0 = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|x64.Build.0 = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Debug|x86.Build.0 = Debug|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|x64.ActiveCfg = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|x64.Build.0 = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|x86.ActiveCfg = Release|Any CPU
+		{DAB25F8E-896F-4C19-8067-C19C74D4A5B5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

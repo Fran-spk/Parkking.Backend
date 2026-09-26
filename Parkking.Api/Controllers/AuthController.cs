@@ -15,7 +15,7 @@ public class AuthController : ControllerBase
     public AuthController(SesionService authService) => _authService = authService;
 
     [HttpPost("login")]
-    public ActionResult Login([FromBody] LoginRequest request)
+    public ActionResult<LoginResponse> Login([FromBody] LoginRequest request)
     {
         try
         {
@@ -29,14 +29,14 @@ public class AuthController : ControllerBase
                 Expires = DateTime.UtcNow.AddHours(8)
             });
 
-            return Ok(new
+            return Ok(new LoginResponse
             {
-                mensaje = "Login exitoso",
-                usuario = new
+                Usuario = new LoginUsuarioDto
                 {
-                    id = usuario.USU_ID,
-                    nombre = usuario.UsuarioName,
-                    mail = usuario.Mail
+                    Id = usuario.USU_ID,
+                    Usuario = usuario.UsuarioName,
+                    Nombre = usuario.Nombre,
+                    Mail = usuario.Mail,
                 }
             });
         }
@@ -55,13 +55,13 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public ActionResult<AuthMeDto> Me()
     {
-        return Ok(new
+        return Ok(new AuthMeDto
         {
-            id = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
-            nombre = User.FindFirst(ClaimTypes.Name)?.Value,
-            email = User.FindFirst(ClaimTypes.Email)?.Value
+            Id = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+            Nombre = User.FindFirst(ClaimTypes.Name)?.Value,
+            Email = User.FindFirst(ClaimTypes.Email)?.Value
         });
     }
 }

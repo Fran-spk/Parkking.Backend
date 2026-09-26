@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Uploads locales de documentos
+App_Data/
+uploads/
+
 # User-specific files
 *.rsuser
 *.suo

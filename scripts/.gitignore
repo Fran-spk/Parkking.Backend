@@ -1,0 +1,2 @@
+# Ignorar PIDs de la sesión de desarrollo local
+scripts/.dev-pids.json

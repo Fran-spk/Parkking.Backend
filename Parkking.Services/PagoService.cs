@@ -2,43 +2,51 @@ using System.Globalization;
 using Parkking.DTOs.Pagos;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
+using Parkking.Models.Cobro;
+using Parkking.Models.Finanzas;
 using Parkking.Models.Enums;
 using Parkking.Repositories;
-using Parkking.Services.Movimientos;
+using Parkking.Services.Mensajeria;
 
 namespace Parkking.Services;
 
 public class PagoService
 {
     private readonly PagoRepository _repository;
-    private readonly CajaMensualService _cajaService;
+    private readonly MovimientoService _movimientos;
     private readonly ReciboService _reciboService;
     private readonly MetodoDePagoService _metodoDePagoService;
     private readonly AbonoPrecioService _precioService;
+    private readonly MensajeService _mensajes;
     private readonly IEstacionamientoContext _estacionamiento;
 
     public PagoService(
         PagoRepository repository,
-        CajaMensualService cajaService,
+        MovimientoService movimientos,
         ReciboService reciboService,
         MetodoDePagoService metodoDePagoService,
         AbonoPrecioService precioService,
+        MensajeService mensajes,
         IEstacionamientoContext estacionamiento)
     {
         _repository = repository;
-        _cajaService = cajaService;
+        _movimientos = movimientos;
         _reciboService = reciboService;
         _metodoDePagoService = metodoDePagoService;
         _precioService = precioService;
+        _mensajes = mensajes;
         _estacionamiento = estacionamiento;
     }
 
     private int TenantId => _estacionamiento.EstacionamientoId;
 
-    public PagoConDetallesDto RegistrarPago(RegistrarPagoRequest request)
+    public async Task<PagoConDetallesDto> RegistrarPagoAsync(
+        RegistrarPagoRequest request,
+        CancellationToken ct = default)
     {
         var abonoId = request.AbonoId;
         using var transaction = _repository.BeginTransaction();
+        Recibo? recibo;
         try
         {
             var abono = _repository.GetAbonoActivo(abonoId)
@@ -119,8 +127,19 @@ public class PagoService
             }
             _repository.SaveChanges();
 
-            var cuotaPrincipal = cuotasAfectadas.OrderBy(c => c.PeriodoInicio).First();
-            _cajaService.RegistrarMovimiento(new PagoAbonoStrategy(pago, abono, cuotaPrincipal));
+            var movimiento = new Movimiento
+            {
+                EstacionamientoId = abono.EstacionamientoId,
+                ClienteId = abono.ClienteId,
+                PagoId = pago.PagoId,
+                AbonoId = abono.AbonoId,
+                Importe = pago.MontoTotal,
+                Tipo = TipoMovimiento.Ingreso,
+                Concepto = "Cobro de abono",
+                FechaHora = pago.FechaHora,
+                UsuarioId = _estacionamiento.GetUsuarioActual().Id
+            };
+            _movimientos.Registrar(movimiento, Array.Empty<int>(), "Alta de movimiento por cobro");
 
             var periodosRecibo = cuotasAfectadas
                 .OrderBy(c => c.PeriodoInicio)
@@ -130,13 +149,15 @@ public class PagoService
                     FormatearPeriodo(c.PeriodoInicio, c.PeriodoFin, abono.PeriodicidadCobro)))
                 .Distinct()
                 .ToList();
-            var recibo = _reciboService.GenerarDesdePago(pago, abono, periodosRecibo, metodo.Nombre);
+            recibo = _reciboService.GenerarDesdePago(pago, abono, periodosRecibo, metodo.Nombre);
 
             transaction.Commit();
 
             var dto = GetPagoConDetalles(pago.PagoId);
             dto.ReciboId = recibo.ReciboId;
             dto.ReciboNumero = recibo.NumeroFormateado;
+
+            await IntentarEnviarReciboPorEmailAsync(dto, recibo.ReciboId, ct);
             return dto;
         }
         catch
@@ -146,6 +167,34 @@ public class PagoService
         }
     }
 
+    /// <summary>Compat sync para callers internos (si los hubiera).</summary>
+    public PagoConDetallesDto RegistrarPago(RegistrarPagoRequest request) =>
+        RegistrarPagoAsync(request).GetAwaiter().GetResult();
+
+    private async Task IntentarEnviarReciboPorEmailAsync(
+        PagoConDetallesDto dto,
+        int reciboId,
+        CancellationToken ct)
+    {
+        var datos = _repository.GetEstacionamiento(TenantId);
+        if (datos is null || !datos.EnviarReciboPorEmail)
+            return;
+
+        dto.ReciboEmailIntentado = true;
+        try
+        {
+            var msg = await _mensajes.EnviarReciboAsync(reciboId, emailOverride: null, ct);
+            dto.ReciboEmailEnviado = true;
+            dto.ReciboEmailSimulado = msg.Simulado;
+            dto.ReciboEmailDestinatario = msg.Destinatario;
+        }
+        catch (Exception ex)
+        {
+            // El cobro ya está confirmado: no fallar el pago por el mail.
+            dto.ReciboEmailEnviado = false;
+            dto.ReciboEmailError = ex.Message;
+        }
+    }
     /// <summary>Cuotas / períodos a pagar del abono (con saldo &gt; 0).</summary>
     public List<CuotaPendienteDto> GetCuotasPendientes(int abonoId) =>
         GetCuotasTimeline(abonoId)
@@ -166,11 +215,13 @@ public class PagoService
             var patentes = string.Join(", ",
                 abono.AbonoVehiculos.Select(av => av.Vehiculo?.Patente).Where(p => !string.IsNullOrEmpty(p)));
 
-            foreach (var (inicio, fin) in PeriodicidadHelper.EnumerarPeriodos(
-                         abono.FechaInicioCobro, hoy, abono.PeriodicidadCobro))
+            var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+            var ancla = Ancla(abono);
+            foreach (var periodo in strategy.Enumerar(abono.FechaInicioCobro, hoy, ancla))
             {
-                var cuota = abono.Cuotas.FirstOrDefault(c =>
-                    c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == inicio);
+                var inicio = periodo.Inicio;
+                var fin = periodo.Fin;
+                var cuota = BuscarCuotaDelPeriodo(abono, inicio, fin);
 
                 var montoBase = cuota?.Monto ?? ObtenerMontoBaseSafe(abono, inicio);
 
@@ -239,29 +290,43 @@ public class PagoService
         var hoy = DateOnly.FromDateTime(DateTime.Today);
         var result = new List<CuotaTimelineDto>();
 
+        // Incluir al menos hasta la 1ª cuota / inicio de cobro (p.ej. quincenal con
+        // OmitirMesEntrante que arranca en la quincena siguiente aún futura).
+        var hasta = hoy;
+        if (abono.FechaInicioCobro > hasta)
+            hasta = abono.FechaInicioCobro;
+
+        var maxCuotaInicio = abono.Cuotas
+            .Where(c => c.Estado != EstadoCuota.Anulada)
+            .Select(c => c.PeriodoInicio)
+            .DefaultIfEmpty()
+            .Max();
+        if (maxCuotaInicio != default && maxCuotaInicio > hasta)
+            hasta = maxCuotaInicio;
+
         var ultimaCuotaPagada = abono.Cuotas
             .Where(c => c.Estado == EstadoCuota.Pagada)
             .Select(c => c.PeriodoInicio)
             .DefaultIfEmpty()
             .Max();
-
-        var hasta = hoy;
         if (ultimaCuotaPagada != default && ultimaCuotaPagada > hasta)
             hasta = ultimaCuotaPagada;
 
-        foreach (var (inicio, fin) in PeriodicidadHelper.EnumerarPeriodos(
-                     abono.FechaInicioCobro, hasta, abono.PeriodicidadCobro))
+        var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+        var ancla = Ancla(abono);
+        foreach (var periodo in strategy.Enumerar(abono.FechaInicioCobro, hasta, ancla))
         {
-            result.Add(MapCuotaTimeline(abono, inicio, fin, esFuturo: false));
+            var esFuturo = periodo.Inicio > hoy;
+            result.Add(MapCuotaTimeline(abono, periodo.Inicio, periodo.Fin, esFuturo));
         }
 
         var ultimo = result.LastOrDefault();
         if (ultimo != null)
         {
-            var (proxInicio, proxFin) = PeriodicidadHelper.SiguientePeriodo(
-                ultimo.PeriodoInicio, ultimo.PeriodoFin, abono.PeriodicidadCobro);
-            if (!result.Any(r => r.PeriodoInicio == proxInicio))
-                result.Add(MapCuotaTimeline(abono, proxInicio, proxFin, esFuturo: true));
+            var prox = strategy.SiguienteCiclo(
+                new PeriodoCobro(ultimo.PeriodoInicio, ultimo.PeriodoFin), ancla);
+            if (!result.Any(r => r.PeriodoInicio == prox.Inicio))
+                result.Add(MapCuotaTimeline(abono, prox.Inicio, prox.Fin, esFuturo: prox.Inicio > hoy));
         }
 
         return result;
@@ -270,8 +335,7 @@ public class PagoService
     private CuotaTimelineDto MapCuotaTimeline(
         Abono abono, DateOnly inicio, DateOnly fin, bool esFuturo)
     {
-        var cuota = abono.Cuotas.FirstOrDefault(c =>
-            c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == inicio);
+        var cuota = BuscarCuotaDelPeriodo(abono, inicio, fin);
 
         MontoPeriodoDto? precio = null;
         List<ComponenteTarifaDto> componentes;
@@ -404,14 +468,10 @@ public class PagoService
     {
         var abono = _repository.GetAbonoActivo(abonoId)
             ?? throw new Exception("Abono no encontrado.");
-        var inicio = periodoInicio
-            ?? PeriodicidadHelper.PeriodoQueContiene(
-                DateOnly.FromDateTime(DateTime.UtcNow), abono.PeriodicidadCobro).Inicio;
-        var fin = periodoInicio.HasValue
-            ? PeriodicidadHelper.PeriodoQueContiene(inicio, abono.PeriodicidadCobro).Fin
-            : PeriodicidadHelper.PeriodoQueContiene(
-                DateOnly.FromDateTime(DateTime.UtcNow), abono.PeriodicidadCobro).Fin;
-        return _precioService.ResolverParaPeriodo(abono, inicio, fin);
+        var ancla = Ancla(abono);
+        var refFecha = periodoInicio ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var periodo = ResolvePeriodoParaFecha(abono, refFecha);
+        return _precioService.ResolverParaPeriodo(abono, periodo.Inicio, periodo.Fin);
     }
 
     public PagoConDetallesDto GetPagoConDetalles(int pagoId)
@@ -428,37 +488,50 @@ public class PagoService
             ?? throw new Exception("No se encontraron los datos del estacionamiento.");
 
         var fechaRef = mes ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var (periodoInicio, periodoFin) = PeriodicidadHelper.PeriodoQueContiene(fechaRef, abono.PeriodicidadCobro);
+        if (fechaRef < abono.FechaInicioCobro)
+            throw new Exception("No se puede sugerir un período anterior al inicio de cobros.");
 
-        var precio = _precioService.ResolverParaPeriodo(abono, periodoInicio, periodoFin);
+        var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+        var ancla = Ancla(abono);
+        var cicloNatural = strategy.CicloQueContiene(
+            fechaRef < abono.FechaInicio ? abono.FechaInicio : fechaRef, ancla);
+        var precio = _precioService.ResolverParaPeriodo(abono, cicloNatural.Inicio, cicloNatural.Fin);
         var tarifaBase = precio.Monto;
-        var monto = tarifaBase;
+
+        var primer = strategy.ResolverPrimerPeriodo(
+            abono.FechaInicio, abono.PoliticaPrimerPeriodo, tarifaBase, ancla);
+
+        PeriodoCobro periodo;
+        decimal monto;
         var aplicaProporcional = false;
 
-        // Primera cuota del abono: prorrateo según umbral de DatosEstacionamiento (sin recargo)
-        var montoProrrateado = datos.CalcularMontoPrimeraCuota(
-            tarifaBase, abono.FechaInicio, periodoInicio, abono.PeriodicidadCobro);
-        if (montoProrrateado < tarifaBase)
+        if (primer.Periodo.Contiene(fechaRef) || fechaRef == abono.FechaInicioCobro)
         {
-            monto = montoProrrateado;
-            aplicaProporcional = true;
+            periodo = new PeriodoCobro(abono.FechaInicioCobro, primer.Periodo.Fin);
+            monto = primer.Monto;
+            aplicaProporcional = primer.FueProrrateado;
+        }
+        else
+        {
+            periodo = strategy.CicloQueContiene(fechaRef, ancla);
+            monto = tarifaBase;
         }
 
-        var cuotaExistente = _repository.GetCuotaPorPeriodo(abonoId, periodoInicio);
+        var cuotaExistente = _repository.GetCuotaPorPeriodo(abonoId, periodo.Inicio);
         if (cuotaExistente != null)
         {
             _repository.RecargarDetallesCuota(cuotaExistente);
             if (cuotaExistente.Estado == EstadoCuota.Pagada || cuotaExistente.Saldo <= 0)
                 throw new Exception(
-                    $"El período {FormatearPeriodo(periodoInicio, periodoFin, abono.PeriodicidadCobro)} ya está pagado.");
+                    $"El período {FormatearPeriodo(periodo.Inicio, periodo.Fin, abono.PeriodicidadCobro)} ya está pagado.");
 
-            // Si ya hay cuota materializada, el saldo manda (ya incluye prorrateo al crear)
             monto = cuotaExistente.Saldo;
             aplicaProporcional = cuotaExistente.Monto < tarifaBase && cuotaExistente.MontoPagado == 0;
+            periodo = new PeriodoCobro(cuotaExistente.PeriodoInicio, cuotaExistente.PeriodoFin);
         }
 
         var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
-        var recargo = datos.CalcularRecargoSugerido(monto, periodoInicio, hoy, abono.PeriodicidadCobro);
+        var recargo = datos.CalcularRecargoSugerido(monto, periodo.Inicio, hoy, abono.PeriodicidadCobro);
 
         return new PagoSugeridoDto
         {
@@ -466,9 +539,9 @@ public class PagoService
             Recargo = recargo,
             AplicaProporcional = aplicaProporcional,
             EsPrecioAcordado = precio.EsPrecioAcordado,
-            MesDate = periodoInicio,
-            PeriodoInicio = periodoInicio,
-            PeriodoFin = periodoFin,
+            MesDate = periodo.Inicio,
+            PeriodoInicio = periodo.Inicio,
+            PeriodoFin = periodo.Fin,
             ComponentesTarifa = precio.ComponentesTarifa,
         };
     }
@@ -485,11 +558,13 @@ public class PagoService
             var plaza = abono.Plazas.FirstOrDefault(p => p.Activo);
             var vehiculo = abono.AbonoVehiculos.FirstOrDefault()?.Vehiculo;
 
-            foreach (var (inicio, fin) in PeriodicidadHelper.EnumerarPeriodos(
-                         abono.FechaInicioCobro, hoy, abono.PeriodicidadCobro))
+            var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+            var ancla = Ancla(abono);
+            foreach (var periodo in strategy.Enumerar(abono.FechaInicioCobro, hoy, ancla))
             {
-                var cuota = abono.Cuotas.FirstOrDefault(c =>
-                    c.Estado != EstadoCuota.Anulada && c.PeriodoInicio == inicio);
+                var inicio = periodo.Inicio;
+                var fin = periodo.Fin;
+                var cuota = BuscarCuotaDelPeriodo(abono, inicio, fin);
 
                 var montoBase = cuota?.Monto ?? ObtenerMontoBaseSafe(abono, inicio);
 
@@ -568,13 +643,14 @@ public class PagoService
                 else if (!string.IsNullOrWhiteSpace(d.PeriodoInicio) &&
                          DateOnly.TryParseExact(d.PeriodoInicio, "yyyy-MM-dd", out var fechaRef))
                 {
-                    (inicio, fin) = PeriodicidadHelper.PeriodoQueContiene(fechaRef, abono.PeriodicidadCobro);
+                    var periodoResuelto = ResolvePeriodoParaFecha(abono, fechaRef);
+                    inicio = periodoResuelto.Inicio;
+                    fin = periodoResuelto.Fin;
                 }
                 else
                     throw new Exception("Cada detalle requiere CuotaId o PeriodoInicio (yyyy-MM-dd).");
 
-                var (inicioCobro, _) = PeriodicidadHelper.PeriodoQueContiene(abono.FechaInicioCobro, abono.PeriodicidadCobro);
-                if (inicio < inicioCobro)
+                if (inicio < abono.FechaInicioCobro)
                     throw new Exception("No se puede registrar un pago anterior al inicio de cobros.");
 
                 lineas.Add(new LineaPagoInterna
@@ -594,14 +670,13 @@ public class PagoService
         if (!DateOnly.TryParseExact(request.Mes, "yyyy-MM-dd", out var mesRef))
             throw new Exception("El formato de fecha debe ser yyyy-MM-dd.");
 
-        var (pInicio, pFin) = PeriodicidadHelper.PeriodoQueContiene(mesRef, abono.PeriodicidadCobro);
-        var (limiteCobro, _) = PeriodicidadHelper.PeriodoQueContiene(abono.FechaInicioCobro, abono.PeriodicidadCobro);
-        if (pInicio < limiteCobro)
+        var p = ResolvePeriodoParaFecha(abono, mesRef);
+        if (p.Inicio < abono.FechaInicioCobro)
             throw new Exception("No se puede registrar un pago anterior al inicio de los cobros del abono.");
 
         return new List<LineaPagoInterna>
         {
-            new() { PeriodoInicio = pInicio, PeriodoFin = pFin, Monto = request.Monto }
+            new() { PeriodoInicio = p.Inicio, PeriodoFin = p.Fin, Monto = request.Monto }
         };
     }
 
@@ -694,14 +769,50 @@ public class PagoService
 
     private decimal ObtenerMontoBaseSafe(Abono abono, DateOnly periodoInicio)
     {
-        var fin = PeriodicidadHelper.PeriodoQueContiene(periodoInicio, abono.PeriodicidadCobro).Fin;
-        return _precioService.TryResolverParaPeriodo(abono, periodoInicio, fin)?.Monto ?? 0;
+        var periodo = ResolvePeriodoParaFecha(abono, periodoInicio);
+        return _precioService.TryResolverParaPeriodo(abono, periodo.Inicio, periodo.Fin)?.Monto ?? 0;
+    }
+
+    /// <summary>
+    /// Busca la cuota del período: match exacto por inicio, o solapamiento
+    /// (1ª cuota irregular / datos legacy).
+    /// </summary>
+    private static Cuota? BuscarCuotaDelPeriodo(Abono abono, DateOnly inicio, DateOnly fin)
+    {
+        var vigentes = abono.Cuotas.Where(c => c.Estado != EstadoCuota.Anulada);
+
+        var exacta = vigentes.FirstOrDefault(c => c.PeriodoInicio == inicio);
+        if (exacta != null)
+            return exacta;
+
+        return vigentes.FirstOrDefault(c =>
+            c.PeriodoInicio <= fin && c.PeriodoFin >= inicio);
+    }
+
+    private static DateOnly Ancla(Abono abono) =>
+        PeriodicidadStrategyFactory.AnclaDesdeFechaInicio(abono.FechaInicio);
+
+    /// <summary>
+    /// Resuelve el período cobrable que contiene la fecha (1ª cuota irregular o ciclo natural).
+    /// </summary>
+    private static PeriodoCobro ResolvePeriodoParaFecha(Abono abono, DateOnly fechaRef)
+    {
+        var ancla = Ancla(abono);
+        var strategy = PeriodicidadStrategyFactory.For(abono.PeriodicidadCobro);
+        var primer = strategy.ResolverPrimerPeriodo(
+            abono.FechaInicio, abono.PoliticaPrimerPeriodo, 0m, ancla);
+
+        if (primer.Periodo.Contiene(fechaRef) || fechaRef == abono.FechaInicioCobro)
+            return new PeriodoCobro(abono.FechaInicioCobro, primer.Periodo.Fin);
+
+        return strategy.CicloQueContiene(fechaRef, ancla);
     }
 
     private static string FormatearPeriodo(DateOnly inicio, DateOnly fin, PeriodicidadCobro p) =>
         p switch
         {
-            PeriodicidadCobro.Quincenal => inicio.Day <= 15
+            // Label por fin del slot (soporta 1ª cuota que arranca mid-quincena).
+            PeriodicidadCobro.Quincenal => fin.Day <= 15
                 ? $"1ª quincena {inicio.ToString("MMMM yyyy", new CultureInfo("es-AR"))}"
                 : $"2ª quincena {inicio.ToString("MMMM yyyy", new CultureInfo("es-AR"))}",
             PeriodicidadCobro.Mensual => inicio.ToString("MMMM yyyy", new CultureInfo("es-AR")),

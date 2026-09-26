@@ -45,6 +45,14 @@ public class DetallePagoDto
 public class PagoConDetallesDto : PagoDto
 {
     public List<DetallePagoDto> Detalles { get; set; } = new();
+
+    /// <summary>True si el estacionamiento tiene envío automático y se intentó mandar.</summary>
+    public bool? ReciboEmailIntentado { get; set; }
+
+    public bool? ReciboEmailEnviado { get; set; }
+    public bool? ReciboEmailSimulado { get; set; }
+    public string? ReciboEmailDestinatario { get; set; }
+    public string? ReciboEmailError { get; set; }
 }
 
 public class CuotaPendienteDto

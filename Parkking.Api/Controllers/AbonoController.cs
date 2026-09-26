@@ -13,8 +13,13 @@ namespace Parkking.Api.Controllers;
 public class AbonoController : ControllerBase
 {
     private readonly AbonoService _service;
+    private readonly ContratoService _contratos;
 
-    public AbonoController(AbonoService service) => _service = service;
+    public AbonoController(AbonoService service, ContratoService contratos)
+    {
+        _service = service;
+        _contratos = contratos;
+    }
 
     [HttpGet("AllAbonos")]
     public ActionResult<IEnumerable<AbonoDto>> GetAllAbonos()
@@ -35,6 +40,21 @@ public class AbonoController : ControllerBase
     {
         try { return Ok(_service.GetById(id).Adapt<AbonoDto>()); }
         catch (Exception ex) { return NotFound(ex.Message); }
+    }
+
+    /// <summary>PDF de contrato de locación generado desde el abono + config del estacionamiento.</summary>
+    [HttpGet("{id:int}/contrato.pdf")]
+    public IActionResult ContratoPdf(int id)
+    {
+        try
+        {
+            var (bytes, fileName) = _contratos.GenerarPdf(id);
+            return File(bytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("cliente/{clienteId}")]

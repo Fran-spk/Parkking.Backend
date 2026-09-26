@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Parkking.Infrastructure.Tenant;
 using Parkking.Models;
 using Parkking.Models.Enums;
+using Parkking.Models.Finanzas;
 using Parkking.Models.Seguridad;
 
 namespace Parkking.Infrastructure.Persistence;
@@ -40,9 +41,22 @@ public class EstacionamientoContext : DbContext
     public DbSet<Pago> Pagos { get; set; } = null!;
     public DbSet<DetallePago> DetallesPago { get; set; } = null!;
     public DbSet<Recibo> Recibos { get; set; } = null!;
+    public DbSet<Mensaje> Mensajes { get; set; } = null!;
+    public DbSet<Documento> Documentos { get; set; } = null!;
     public DbSet<MetodoDePago> MetodosDePago { get; set; } = null!;
-    public DbSet<CajaMensual> CajasMensuales { get; set; } = null!;
-    public DbSet<MovimientoCaja> MovimientosCaja { get; set; } = null!;
+    public DbSet<CuentaCorrienteCliente> CuentasCorrientesCliente { get; set; } = null!;
+    public DbSet<CuentaCorrienteEstacionamiento> CuentasCorrientesEstacionamiento { get; set; } = null!;
+    public DbSet<Movimiento> Movimientos { get; set; } = null!;
+    public DbSet<GrupoFinanciero> GruposFinancieros { get; set; } = null!;
+    public DbSet<MovimientoGrupoFinanciero> MovimientosGrupoFinanciero { get; set; } = null!;
+    public DbSet<ReglaAsignacion> ReglasAsignacion { get; set; } = null!;
+    public DbSet<TipoGasto> TiposGasto { get; set; } = null!;
+    public DbSet<Cargo> Cargos { get; set; } = null!;
+    public DbSet<Gasto> Gastos { get; set; } = null!;
+    public DbSet<Reintegro> Reintegros { get; set; } = null!;
+    public DbSet<AjusteFinanciero> AjustesFinancieros { get; set; } = null!;
+    public DbSet<AplicacionSaldoAFavor> AplicacionesSaldoAFavor { get; set; } = null!;
+    public DbSet<AuditoriaMovimiento> AuditoriasMovimiento { get; set; } = null!;
     public DbSet<CategoriaCochera> CategoriasCochera { get; set; } = null!;
     public DbSet<Usuario> Usuarios { get; set; } = null!;
     public DbSet<Grupo> Grupos { get; set; } = null!;
@@ -66,6 +80,7 @@ public class EstacionamientoContext : DbContext
             e.HasKey(x => x.AbonoId);
             e.HasOne(x => x.Cliente).WithMany(c => c.Abonos).HasForeignKey(x => x.ClienteId);
             e.Property(x => x.PeriodicidadCobro).HasConversion<int>();
+            e.Property(x => x.PoliticaPrimerPeriodo).HasConversion<int>();
         });
 
         modelBuilder.Entity<AbonoPlaza>(e =>
@@ -156,6 +171,30 @@ public class EstacionamientoContext : DbContext
             e.HasIndex(x => new { x.EstacionamientoId, x.Numero }).IsUnique();
         });
 
+        modelBuilder.Entity<Mensaje>(e =>
+        {
+            e.ToTable("Mensajes");
+            e.HasKey(x => x.MensajeId);
+            e.HasIndex(x => new { x.EstacionamientoId, x.Fecha });
+            e.HasIndex(x => x.ReciboId);
+        });
+
+        modelBuilder.Entity<Documento>(e =>
+        {
+            e.ToTable("Documentos");
+            e.HasKey(x => x.DocumentoId);
+            e.HasOne(x => x.Cliente).WithMany().HasForeignKey(x => x.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Vehiculo).WithMany().HasForeignKey(x => x.VehiculoId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Abono).WithMany().HasForeignKey(x => x.AbonoId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.EstacionamientoId, x.Activo, x.FechaCarga });
+            e.HasIndex(x => x.ClienteId);
+            e.HasIndex(x => x.VehiculoId);
+            e.HasIndex(x => x.AbonoId);
+        });
+
         modelBuilder.Entity<DetallePago>(e =>
         {
             e.ToTable("DetallesPago");
@@ -165,10 +204,87 @@ public class EstacionamientoContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<MovimientoCaja>(e =>
+        modelBuilder.Entity<Movimiento>(e =>
         {
+            e.ToTable("Movimientos");
+            e.HasOne(x => x.Cliente).WithMany().HasForeignKey(x => x.ClienteId);
+            e.HasOne(x => x.Pago).WithMany().HasForeignKey(x => x.PagoId);
             e.HasOne(x => x.Abono).WithMany().HasForeignKey(x => x.AbonoId);
-            e.HasOne(x => x.Pago).WithMany(p => p.Movimientos).HasForeignKey(x => x.PagoId);
+            e.HasOne(x => x.TipoGasto).WithMany().HasForeignKey(x => x.TipoGastoId);
+            e.HasOne(x => x.CuentaCorrienteEstacionamiento).WithMany().HasForeignKey(x => x.CuentaCorrienteEstacionamientoId);
+            e.HasOne(x => x.CuentaCorrienteCliente).WithMany().HasForeignKey(x => x.CuentaCorrienteClienteId);
+            e.HasIndex(x => x.EstacionamientoId);
+            e.HasIndex(x => x.ClienteId);
+            e.HasIndex(x => x.PagoId);
+        });
+
+        modelBuilder.Entity<CuentaCorrienteCliente>(e =>
+        {
+            e.ToTable("CuentasCorrientesCliente");
+            e.HasIndex(x => x.ClienteId).IsUnique();
+            e.HasOne(x => x.Cliente).WithMany().HasForeignKey(x => x.ClienteId);
+        });
+
+        modelBuilder.Entity<CuentaCorrienteEstacionamiento>(e =>
+        {
+            e.ToTable("CuentasCorrientesEstacionamiento");
+            e.HasIndex(x => x.EstacionamientoId).IsUnique();
+        });
+
+        modelBuilder.Entity<GrupoFinanciero>(e =>
+        {
+            e.ToTable("GruposFinancieros");
+            e.HasIndex(x => new { x.EstacionamientoId, x.Nombre });
+        });
+
+        modelBuilder.Entity<MovimientoGrupoFinanciero>(e =>
+        {
+            e.ToTable("MovimientosGrupoFinanciero");
+            e.HasKey(x => new { x.MovimientoId, x.GrupoFinancieroId });
+            e.HasOne(x => x.Movimiento).WithMany(m => m.Grupos).HasForeignKey(x => x.MovimientoId);
+            e.HasOne(x => x.GrupoFinanciero).WithMany(g => g.Movimientos).HasForeignKey(x => x.GrupoFinancieroId);
+        });
+
+        modelBuilder.Entity<ReglaAsignacion>(e =>
+        {
+            e.ToTable("ReglasAsignacion");
+            e.HasOne(x => x.GrupoFinanciero).WithMany(g => g.Reglas).HasForeignKey(x => x.GrupoFinancieroId);
+            e.HasOne(x => x.Cliente).WithMany().HasForeignKey(x => x.ClienteId);
+            e.HasOne(x => x.TipoGasto).WithMany(t => t.Reglas).HasForeignKey(x => x.TipoGastoId);
+        });
+
+        modelBuilder.Entity<TipoGasto>(e => e.ToTable("TiposGasto"));
+        modelBuilder.Entity<Cargo>(e =>
+        {
+            e.ToTable("Cargos");
+            e.HasOne<Abono>().WithMany().HasForeignKey(x => x.AbonoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.AbonoId);
+        });
+        modelBuilder.Entity<Gasto>(e =>
+        {
+            e.ToTable("Gastos");
+            e.HasOne(x => x.Movimiento).WithMany().HasForeignKey(x => x.MovimientoId);
+            e.HasOne(x => x.TipoGasto).WithMany(t => t.Gastos).HasForeignKey(x => x.TipoGastoId);
+        });
+        modelBuilder.Entity<Reintegro>(e =>
+        {
+            e.ToTable("Reintegros");
+            e.HasOne(x => x.Movimiento).WithMany().HasForeignKey(x => x.MovimientoId);
+        });
+        modelBuilder.Entity<AjusteFinanciero>(e =>
+        {
+            e.ToTable("AjustesFinancieros");
+            e.HasOne(x => x.Movimiento).WithMany().HasForeignKey(x => x.MovimientoId);
+        });
+        modelBuilder.Entity<AplicacionSaldoAFavor>(e =>
+        {
+            e.ToTable("AplicacionesSaldoAFavor");
+            e.HasOne(x => x.Movimiento).WithMany().HasForeignKey(x => x.MovimientoId);
+        });
+        modelBuilder.Entity<AuditoriaMovimiento>(e =>
+        {
+            e.ToTable("AuditoriasMovimiento");
+            e.HasOne(x => x.Movimiento).WithMany(m => m.Auditorias).HasForeignKey(x => x.MovimientoId);
         });
 
         modelBuilder.Entity<UsuarioEstacionamiento>()

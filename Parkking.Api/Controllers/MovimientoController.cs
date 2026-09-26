@@ -1,6 +1,6 @@
-﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
-using Parkking.DTOs.Caja;
+using Parkking.DTOs.Finanzas;
+using Parkking.Infrastructure.Tenant;
 using Parkking.Services;
 
 namespace Parkking.Api.Controllers;
@@ -10,62 +10,45 @@ namespace Parkking.Api.Controllers;
 public class MovimientoController : ControllerBase
 {
     private readonly MovimientoService _service;
+    private readonly IEstacionamientoContext _estacionamiento;
 
-    public MovimientoController(
-        MovimientoService service)
+    public MovimientoController(MovimientoService service, IEstacionamientoContext estacionamiento)
     {
         _service = service;
+        _estacionamiento = estacionamiento;
     }
 
-    [HttpPost("cargo-cliente")]
-
-    public IActionResult RegistrarCargoCliente(
-        [FromBody] RegistrarMovimientoRequest request)
+    [HttpGet]
+    public ActionResult<IEnumerable<MovimientoDto>> GetAll(
+        [FromQuery] DateTime? desde,
+        [FromQuery] DateTime? hasta,
+        [FromQuery] int? tipo,
+        [FromQuery] int? clienteId,
+        [FromQuery] int? usuarioId,
+        [FromQuery] int? grupoFinancieroId)
     {
         try
         {
-            return Ok(
-                _service
-                    .RegistrarCargoCliente(request)
-            );
+            return Ok(_service.GetFiltrados(
+                _estacionamiento.EstacionamientoId,
+                desde,
+                hasta,
+                tipo,
+                clienteId,
+                usuarioId,
+                grupoFinancieroId));
         }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        catch (Exception ex) { return BadRequest(ex.Message); }
     }
 
-    [HttpPost("reintegro-cliente")]
-    public IActionResult RegistrarReintegroCliente(
-        [FromBody] RegistrarMovimientoRequest request)
+    [HttpGet("{id:int}")]
+    public ActionResult<MovimientoDetalleDto> GetById(int id)
     {
         try
         {
-            return Ok(
-                _service
-                    .RegistrarReintegroCliente(request)
-            );
+            var movimiento = _service.GetById(id, _estacionamiento.EstacionamientoId);
+            return movimiento == null ? NotFound("Movimiento no encontrado") : Ok(movimiento);
         }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpPost("gasto-estacionamiento")]
-    public IActionResult RegistrarGastoEstacionamiento(
-        [FromBody] RegistrarMovimientoRequest request)
-    {
-        try
-        {
-            return Ok(
-                _service
-                    .RegistrarGastoEstacionamiento(request)
-            );
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        catch (Exception ex) { return BadRequest(ex.Message); }
     }
 }
